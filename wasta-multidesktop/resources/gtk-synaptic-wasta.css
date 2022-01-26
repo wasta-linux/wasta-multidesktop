@@ -1,0 +1,5 @@
+/* rik: synaptic modifications */
+toolbar {background-color: inherit}
+.primary-toolbar:backdrop {color: #7A8793}
+
+/* https://github.com/jnsh/arc-theme/issues/51 */

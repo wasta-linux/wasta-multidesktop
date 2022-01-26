@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=nemo-desktop-restart
+Comment="Restart Nemo to enable desktop icons in xfce"
+Exec=/usr/share/wasta-multidesktop/scripts/nemo-desktop-restart.sh
+OnlyShowIn=XFCE;
+Terminal=false
+Hidden=false

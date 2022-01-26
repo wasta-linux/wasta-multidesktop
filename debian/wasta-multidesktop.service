@@ -1,0 +1,16 @@
+[Unit]
+Description=Wasta Multidesktop Login
+# Run after user logs into DE.
+After=default.target
+#Requires=
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+ExecStart=/usr/bin/wasta-login
+TimeoutStartSec=0
+User=root
+Group=root
+
+[Install]
+WantedBy=default.target

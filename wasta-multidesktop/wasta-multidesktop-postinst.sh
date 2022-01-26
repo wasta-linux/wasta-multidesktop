@@ -51,8 +51,8 @@ DIR=/usr/share/wasta-multidesktop
 # set slick-greeter as lightdm greeter
 # ------------------------------------------------------------------------------
 # Priority of 90 will override lightdm-gtk-greeter IF it is installed
-update-alternatives --install /usr/share/xgreeters/lightdm-greeter.desktop \
-    lightdm-greeter /usr/share/xgreeters/slick-greeter.desktop 90
+#update-alternatives --install /usr/share/xgreeters/lightdm-greeter.desktop \
+#    lightdm-greeter /usr/share/xgreeters/slick-greeter.desktop 90
 
 # ------------------------------------------------------------------------------
 # set wasta-logo as Plymouth Theme

@@ -76,10 +76,17 @@ fi
 
 # Get current user and session name (can't depend on full env at login).
 if [[ $CURR_DM == 'gdm3' ]]; then
-    CURR_USER=$USERNAME
+
+    # rik: was $USERNAME but not set?? confused what nate thinking here...
+    CURR_USER=$USER
     # TODO: Need a different way to verify wayland session.
-    session_cmd=$(journalctl | grep "GdmSessionWorker: Set PAM environment variable: 'DESKTOP_SESSION" | tail -n1)
+    CURR_SESSION=$(journalctl | grep "setting DESKTOP_SESSION=" | tail -n 1 | sed 's@^.*DESKTOP_SESSION=@@')
+    # X: ubuntu-xorg
+    # Way: ubuntu-wayland??
+
+
     # X:
+    # grep "setting DESKTOP_SESSION=" | tail -n 1 | sed 's@^.*DESKTOP_SESSION=@@'
     # GdmSessionWorker: Set PAM environment variable: 'DESKTOP_SESSION=ubuntu'
     # GdmSessionWorker: start program: /usr/lib/gdm3/gdm-x-session --run-script \
     #   "env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --systemd --session=ubuntu"
@@ -87,8 +94,9 @@ if [[ $CURR_DM == 'gdm3' ]]; then
     # GdmSessionWorker: Set PAM environment variable: 'DESKTOP_SESSION=ubuntu-wayland'
     # GdmSessionWorker: start program: /usr/lib/gdm3/gdm-wayland-session --run-script \
     #   "env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --systemd --session=ubuntu"
-    pat="s/.*DESKTOP_SESSION=(.*)'/\1/"
-    CURR_SESSION=$(echo $session_cmd | sed -r "$pat")
+    #pat="s/.*DESKTOP_SESSION=(.*)'/\1/"
+    #CURR_SESSION=$(echo $session_cmd | sed -r "$pat")
+
 elif [[ $CURR_DM == 'lightdm' ]]; then
     #CURR_USER=$(grep -a "User .* authorized" /var/log/lightdm/lightdm.log | \
     #    tail -1 | sed 's@.*User \(.*\) authorized@\1@')

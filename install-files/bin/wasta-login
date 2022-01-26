@@ -23,6 +23,7 @@
 
 DIR=/usr/share/wasta-multidesktop
 LOGDIR=/var/log/wasta-multidesktop
+mkdir -p ${LOGDIR}
 LOGFILE="${LOGDIR}/wasta-login.txt"
 
 # ENV variables set by DIR/scripts/set-session-env.sh:
@@ -270,11 +271,14 @@ log_msg "as bg: $AS_BG"
 # ------------------------------------------------------------------------------
 
 # SYSTEM level fixes:
-# - we want app-adjustments to run every login to ensure that any updated
+# - we want wasta-app-tweaks to run every login to ensure that any updated
 #   apps don't revert the customizations.
 # - Triggering with 'at' so this login script is not delayed as
-#   app-adjustments can run asynchronously.
-echo "$DIR/scripts/app-adjustments.sh $*" | at now || true;
+#   wasta-app-tweaks can run asynchronously.
+#
+# 2022-01-16 rik: wasta-app-tweaks run by systemd now, don't trigger here
+#
+#echo "wasta-app-tweaks $*" | at now || true;
 
 # USER level fixes:
 # Ensure Nautilus not showing hidden files (power users may be annoyed)

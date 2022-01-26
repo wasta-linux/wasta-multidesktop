@@ -12,7 +12,7 @@ Depends: arc-theme, at, jq, papirus-icon-theme, rename, wasta-app-tweaks, wasta-
 Recommends: arc-solid-theme, papirus-folders, wasta-papirus, wasta-vertex-ubuntu
 Description: Wasta-Linux MultiDesktop
  Ensures cross-desktop compatibility between different desktop sessions.
- An /etc/profile.d script runs on login to make necessary adjustments based
+ A systemd triggered script runs on login to make necessary adjustments based
  on detected session in comparison to previously detected session.
  .
  Currently only GNOME, Cinnamon, and XFCE are supported.

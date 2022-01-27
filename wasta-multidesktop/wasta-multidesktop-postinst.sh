@@ -36,23 +36,14 @@ fi
 # Setup Directory for later reference
 DIR=/usr/share/wasta-multidesktop
 
-#WASTA_SYSTEMD=$(systemctl is-enabled wasta-logout || true);
-
-#if [ "$WASTA_SYSTEMD" == "enabled" ];
-#then
-#    echo
-#    echo "*** DISabling wasta-logout systemd service"
-#    echo
-#    # check status this way: journalctl | grep wasta-logout
-#    systemctl disable wasta-logout || true
-#fi
-
 # ------------------------------------------------------------------------------
-# set slick-greeter as lightdm greeter
+# IF slick-greeter found then set as lightdm greeter
 # ------------------------------------------------------------------------------
 # Priority of 90 will override lightdm-gtk-greeter IF it is installed
-#update-alternatives --install /usr/share/xgreeters/lightdm-greeter.desktop \
-#    lightdm-greeter /usr/share/xgreeters/slick-greeter.desktop 90
+if [ -x "/usr/sbin/slick-greeter" ]; then
+    update-alternatives --install /usr/share/xgreeters/lightdm-greeter.desktop \
+        lightdm-greeter /usr/share/xgreeters/slick-greeter.desktop 90
+fi
 
 # ------------------------------------------------------------------------------
 # set wasta-logo as Plymouth Theme
@@ -63,8 +54,7 @@ DIR=/usr/share/wasta-multidesktop
 WASTA_PLY_THEME=$(cat /etc/alternatives/default.plymouth | \
     grep ImageDir=/usr/share/plymouth/themes/wasta-logo || true;)
 # if variable is still "", then need to set default.plymouth
-if [ -z "$WASTA_PLY_THEME" ];
-then
+if [ -z "$WASTA_PLY_THEME" ]; then
     echo
     echo "*** Setting Plymouth Theme to wasta-logo"
     echo
@@ -90,8 +80,7 @@ fi
 WASTA_PLY_TEXT=$(cat /etc/alternatives/text.plymouth | \
     grep title=Wasta-Linux || true;)
 # if variable is not Wasta-Linux, then need to set text.plymouth
-if [ -z "$WASTA_PLY_TEXT" ];
-then
+if [ -z "$WASTA_PLY_TEXT" ]; then
     echo
     echo "*** Setting Plymouth TEXT Theme to wasta-text"
     echo

@@ -74,11 +74,13 @@ else
     script_exit 0
 fi
 
+2022-01-17 rik: below should work for any DM / DE in 22.04?
+CURR_USER=$(journalctl | grep "New session [0-9]* of user " | tail -n 1 | sed 's@^.*New session .* of user \(.*\)\.@\1@')
+
+
 # Get current user and session name (can't depend on full env at login).
 if [[ $CURR_DM == 'gdm3' ]]; then
 
-    # rik: was $USERNAME but not set?? confused what nate thinking here...
-    CURR_USER=$USER
     # TODO: Need a different way to verify wayland session.
     CURR_SESSION=$(journalctl | grep "setting DESKTOP_SESSION=" | tail -n 1 | sed 's@^.*DESKTOP_SESSION=@@')
     # X: ubuntu-xorg
@@ -98,9 +100,6 @@ if [[ $CURR_DM == 'gdm3' ]]; then
     #CURR_SESSION=$(echo $session_cmd | sed -r "$pat")
 
 elif [[ $CURR_DM == 'lightdm' ]]; then
-    #CURR_USER=$(grep -a "User .* authorized" /var/log/lightdm/lightdm.log | \
-    #    tail -1 | sed 's@.*User \(.*\) authorized@\1@')
-    CURR_USER=$USER
     CURR_SESSION=$(grep -a "Greeter requests session" /var/log/lightdm/lightdm.log | \
         tail -1 | sed 's@.*Greeter requests session \(.*\)@\1@')
 fi

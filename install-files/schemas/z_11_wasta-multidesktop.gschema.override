@@ -23,7 +23,7 @@
 
 [org.gnome.desktop.background]
 show-desktop-icons = true
-picture-uri = 'file:///usr/share/backgrounds/wasta/fabien-bazanegue-unsplash-wasta.jpg'
+picture-uri = 'file:///usr/share/backgrounds/wasta/wasta-trianglify.png'
 
 [org.gnome.desktop.interface]
 clock-format = '12h'
@@ -46,7 +46,7 @@ remember-recent-files = true
 
 [org.gnome.desktop.screensaver]
 lock-enabled = false
-picture-uri = 'file:///usr/share/backgrounds/wasta/fabien-bazanegue-unsplash-wasta.jpg'
+picture-uri = 'file:///usr/share/backgrounds/wasta/wasta-trianglify.png'
 ubuntu-lock-on-suspend = false
 
 [org.gnome.desktop.wm.preferences]

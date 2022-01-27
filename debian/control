@@ -8,11 +8,15 @@ Homepage: https://github.com/wasta-linux/wasta-multidesktop
 
 Package: wasta-multidesktop
 Architecture: all
-Depends: arc-theme, at, jq, papirus-icon-theme, rename, wasta-app-tweaks, wasta-backgrounds, wasta-core, wasta-resources, wmctrl, xmlstarlet, ${misc:Depends}
+Depends: arc-theme, at, gdm | lightdm, jq, papirus-icon-theme, rename, wasta-app-tweaks, wasta-backgrounds, wasta-core, wasta-resources, wmctrl, xmlstarlet, ${misc:Depends}
 Recommends: arc-solid-theme, papirus-folders, wasta-papirus, wasta-vertex-ubuntu
 Description: Wasta-Linux MultiDesktop
- Ensures cross-desktop compatibility between different desktop sessions.
- A systemd triggered script runs on login to make necessary adjustments based
- on detected session in comparison to previously detected session.
+ Ensures cross-desktop compatibility between different DEs (desktop
+ environments).
  .
- Currently only GNOME, Cinnamon, and XFCE are supported.
+ A systemd triggered script runs on login to make necessary adjustments based
+ on detected DE (from gdm or lightdm display manager logs) in comparison to
+ previously detected DE.
+ .
+ Currently only gdm and lightdm DMs are supported.
+ Currently only GNOME, Cinnamon, and XFCE DEs are supported.

@@ -21,23 +21,22 @@
 #
 # ==============================================================================
 
+CURR_UID=$1
+CURR_USER=$(id -un $CURR_UID)
+if [[ "$CURR_USER" == "root" ]] || [[ "$CURR_USER" == "lightdm" ]] || [[ "$CURR_USER" == "gdm" ]]; then
+    # do NOT process: curr user is root, lightdm, or gdm
+    exit 0
+fi
+
+# login needs to wait for a few seconds to make sure env gets set up
+sleep 10
+
 DIR=/usr/share/wasta-multidesktop
 LOGDIR=/var/log/wasta-multidesktop
 mkdir -p ${LOGDIR}
-LOGFILE="${LOGDIR}/wasta-login.txt"
+LOGFILE="${LOGDIR}/wasta-multidesktop.txt"
 
-# ENV variables set by DIR/scripts/set-session-env.sh:
-#   - CURR_DM
-#   - CURR_USER
-#   - CURR_SESSION
-#   - PREV_SESSION
-# The script is sourced so that it can properly export the variables. Otherwise,
-#   wasta-login.sh would have to not be run until set-session-env.sh is finished.
-#   This also means that this script can't "exit", it must "return" instead.
-source $DIR/scripts/set-session-env.sh
-
-
-DEBUG_FILE="${LOGDIR}/wasta-login-debug"
+DEBUG_FILE="${LOGDIR}/debug"
 # Get DEBUG status.
 touch $DEBUG_FILE
 DEBUG=$(cat $DEBUG_FILE)
@@ -102,7 +101,7 @@ gsettings_get() {
     # NOTE: There's a security benefit of using sudo or runuser instead of su.
     #   su adds the user's entire environment, while sudo --set-home and runuser
     #   only set LOGNAME, USER, and HOME (sudo also sets MAIL) to match the user's.
-    value=$(sudo --user=$CURR_USER --set-home dbus-launch gsettings get "$1" "$2")
+    value=$(sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings get "$1" "$2")
     #value=$(/usr/sbin/runuser -u $CURR_USER -- dbus-launch gsettings get "$1" "$2")
     #value=$(su $CURR_USER -c "dbus-launch gsettings get $1 $2")
     echo $value
@@ -112,7 +111,7 @@ gsettings_set() {
     # $1: key_path
     # $2: key
     # $3: value
-    sudo --user=$CURR_USER --set-home dbus-launch gsettings set "$1" "$2" "$3" || true;
+    sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings set "$1" "$2" "$3" || true;
     #/usr/sbin/runuser -u $CURR_USER -- dbus-launch gsettings set "$1" "$2" "$3" || true;
     #su "$CURR_USER" -c "dbus-launch gsettings set $1 $2 $3" || true;
 }
@@ -140,9 +139,6 @@ toggle_apps_visibility() {
 # Initial Setup
 # ------------------------------------------------------------------------------
 
-# Ensure LOGDIR.
-mkdir -p "$LOGDIR"
-
 # Get initial dconf/dbus pids.
 PID_DCONF=$(pidof dconf-service)
 PID_DBUS=$(pidof dbus-daemon)
@@ -150,6 +146,20 @@ PID_DBUS=$(pidof dbus-daemon)
 # Log initial info.
 log_msg
 log_msg "$(date) starting wasta-login"
+
+# ENV variables set by DIR/scripts/set-session-env.sh:
+#   - CURR_DM
+#   - CURR_USER
+#   - CURR_SESSION
+#   - PREV_SESSION
+# The script is sourced so that it can properly export the variables. Otherwise,
+#   wasta-login.sh would have to not be run until set-session-env.sh is finished.
+#   This also means that this script can't "exit", it must "return" instead.
+source $DIR/scripts/set-session-env.sh $CURR_UID
+
+# set log title back to WMD (was set to WMD-env in sourced script above)
+title='WMD'
+
 log_msg "display manager: $CURR_DM"
 log_msg "current user: $CURR_USER"
 log_msg "current session: $CURR_SESSION"
@@ -160,7 +170,7 @@ fi
 
 if [ -x /usr/bin/nautilus ]; then
     log_msg "NAUTILUS show desktop icons: $(gsettings_get org.gnome.desktop.background show-desktop-icons)"
-    log_msg "NAUTILUS draw background: $(gsettings_get org.gnome.desktop.background draw-background)"
+    log_msg "NAUTILUS draw background: $(gsettings_get com.canonical.unity.desktop.background draw-background)"
 fi
 
 # Check that CURR_USER is set.
@@ -183,102 +193,8 @@ if [ "$(pidof xfconfd)" ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# Store current backgrounds
-# ------------------------------------------------------------------------------
-if [ -x /usr/bin/cinnamon ]; then
-    #cinnamon: "file://" precedes filename
-    #2018-12-18 rik: will do urldecode but not currently necessary for cinnamon
-    CINNAMON_BG_URL=$(gsettings_get org.cinnamon.desktop.background picture-uri)
-    CINNAMON_BG=$(urldecode $CINNAMON_BG_URL)
-fi
-
-if [ -x /usr/bin/gnome-shell ]; then
-    #gnome: "file://" precedes filename
-    #2018-12-18 rik: urldecode necessary for gnome IF picture-uri set in gnome AND
-    #   unicode characters present
-    GNOME_BG_URL=$(gsettings_get org.gnome.desktop.background picture-uri)
-    GNOME_BG=$(urldecode $GNOME_BG_URL)
-fi
-
-AS_FILE="/var/lib/AccountsService/users/$CURR_USER"
-# Lightdm 1.26 uses a more standardized syntax for storing user backgrounds.
-#   Since individual desktops would need to re-work how to set user backgrounds
-#   for use by lightdm we are doing it manually here to ensure compatiblity
-#   for all desktops
-if ! [ $(grep "BackgroundFile=" $AS_FILE) ]; then
-    # Error, so BackgroundFile needs to be added to AS_FILE
-    echo  >> $AS_FILE
-    echo "[org.freedesktop.DisplayManager.AccountsService]" >> $AS_FILE
-    echo "BackgroundFile=''" >> $AS_FILE
-fi
-# Retrieve current AccountsService user background
-AS_BG=$(sed -n "s@BackgroundFile=@@p" $AS_FILE)
-
-if [ -x /usr/bin/xfce4-session ]; then
-    XFCE_DEFAULT_SETTINGS="/etc/xdg/xdg-xfce/xfce4/"
-    XFCE_SETTINGS="/home/$CURR_USER/.config/xfce4/"
-    #if ! [ -e $XFCE_SETTINGS ];
-    #then
-    #    if [ $DEBUG ];
-    #    then
-    #        echo "Creating xfce4 settings folder for user" | tee -a $LOGFILE
-    #    fi
-    #    mkdir -p $XFCE_SETTINGS
-    #    # cp -r $XFCE_DEFAULT_SETTINGS $XFCE_SETTINGS
-    #fi
-
-    XFCE_DEFAULT_DESKTOP="/etc/xdg/xdg-xfce/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
-    XFCE_DESKTOP="/home/$CURR_USER/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
-    if ! [ -e $XFCE_DESKTOP ]; then
-        log_msg "Creating xfce4-desktop.xml for user"
-        mkdir -p $XFCE_SETTINGS/xfconf/xfce-perchannel-xml/
-        cp $XFCE_DEFAULT_DESKTOP $XFCE_DESKTOP
-    fi
-
-    # since XFCE has different images per display and display names are
-    # different, and also since xfce properly sets AccountService background
-    # when setting a new background image, we will just use AS as xfce bg.
-    XFCE_BG=$AS_BG
-
-    #xfce: NO "file://" preceding filename
-    #XFCE_BG=$(xmlstarlet sel -T -t -m \
-    #    '//channel[@name="xfce4-desktop"]/property[@name="backdrop"]/property[@name="screen0"]/property[@name="monitorVirtual-1"]/property[@name="workspace0"]/property[@name="last-image"]/@value' \
-    #    -v . -n $XFCE_DESKTOP)
-    # not wanting to use xfconf-query because it starts xfconfd which then makes
-    # it difficult to change user settings.
-    #XFCE_BG=$(su "$CURR_USER" -c "dbus-launch xfconf-query -p /backdrop/screen0/monitor0/workspace0/last-image -c xfce4-desktop")
-fi
-
-# Log BG URL info.
-if [ -x /usr/bin/cinnamon ]; then
-    log_msg "cinnamon bg url encoded: $CINNAMON_BG_URL"
-    log_msg "cinnamon bg url decoded: $CINNAMON_BG"
-fi
-
-if [ -x /usr/bin/xfce4-session ]; then
-    log_msg "xfce bg: $XFCE_BG"
-fi
-
-if [ -x /usr/bin/gnome-shell ]; then
-    log_msg "gnome bg url encoded: $GNOME_BG_URL"
-    log_msg "gnome bg url decoded: $GNOME_BG"
-fi
-
-log_msg "as bg: $AS_BG"
-
-# ------------------------------------------------------------------------------
 # ALL Session Fixes
 # ------------------------------------------------------------------------------
-
-# SYSTEM level fixes:
-# - we want wasta-app-tweaks to run every login to ensure that any updated
-#   apps don't revert the customizations.
-# - Triggering with 'at' so this login script is not delayed as
-#   wasta-app-tweaks can run asynchronously.
-#
-# 2022-01-16 rik: wasta-app-tweaks run by systemd now, don't trigger here
-#
-#echo "wasta-app-tweaks $*" | at now || true;
 
 # USER level fixes:
 # Ensure Nautilus not showing hidden files (power users may be annoyed)
@@ -323,117 +239,6 @@ fi
 #    desktop-file-edit --set-key=Exec --set-value='sh -c "env XDG_CURRENT_DESKTOP=Unity /usr/bin/skypeforlinux %U && sleep 10 && wmctrl -c Skype"' \
 #        /home/$CURR_USER/.config/autostart/skypeforlinux.desktop
 #fi
-
-# --------------------------------------------------------------------------
-# SYNC to PREV_SESSION (mainly for background picture)
-# --------------------------------------------------------------------------
-case "$PREV_SESSION" in
-
-cinnamon|cinnamon2d)
-    # apply Cinnamon settings to other DEs
-    log_msg "Previous Session Cinnamon: Sync to other DEs"
-
-    if [ -x /usr/bin/gnome-shell ]; then
-        # sync Cinnamon background to GNOME background
-        gsettings_set org.gnome.desktop.background picture-uri "$CINNAMON_BG"
-    fi
-
-    if [ -x /usr/bin/xfce4-session ]; then
-        # first make sure xfconfd not running or else change won't load
-        #killall xfconfd
-
-        # sync Cinnamon background to XFCE background
-        NEW_XFCE_BG=$(echo "$CINNAMON_BG" | sed "s@'file://@@" | sed "s@'\$@@")
-        log_msg "Attempting to set NEW_XFCE_BG: $NEW_XFCE_BG"
-        #su "$CURR_USER" -c "dbus-launch xfce4-set-wallpaper $NEW_XFCE_BG" || true;
-
-    # ?? why did I have this too? Doesn't sed below work?? maybe not....
-        #xmlstarlet ed --inplace -u \
-        #    '//channel[@name="xfce4-desktop"]/property[@name="backdrop"]/property[@name="screen0"]/property[@name="monitorVirtual-1"]/property[@name="workspace0"]/property[@name="last-image"]/@value' \
-        #    -v "$NEW_XFCE_BG" $XFCE_DESKTOP
-
-        #set ALL properties with name "last-image" to use value of new background
-        sed -i -e 's@\(name="last-image"\).*@\1 type="string" value="'"$NEW_XFCE_BG"'"/>@' \
-            $XFCE_DESKTOP
-
-    fi
-
-    # sync Cinnamon background to AccountsService background
-    NEW_AS_BG=$(echo "$CINNAMON_BG" | sed "s@file://@@")
-    if [ "$AS_BG" != "$NEW_AS_BG" ]; then
-        sed -i -e "s@\(BackgroundFile=\).*@\1$NEW_AS_BG@" $AS_FILE
-    fi
-;;
-
-ubuntu|ubuntu-xorg|gnome|gnome-flashback-metacity|gnome-flashback-compiz|wasta-gnome)
-    # apply GNOME settings to other DEs
-    log_msg "Previous Session GNOME: Sync to other DEs"
-
-    if [ -x /usr/bin/cinnamon ]; then
-        # sync GNOME background to Cinnamon background
-        gsettings_set org.cinnamon.desktop.background picture-uri "$GNOME_BG"
-    fi
-
-    if [ -x /usr/bin/xfce4-session ]; then
-        # first make sure xfconfd not running or else change won't load
-        #killall xfconfd
-
-        # sync GNOME background to XFCE background
-        NEW_XFCE_BG=$(echo "$GNOME_BG" | sed "s@'file://@@" | sed "s@'\$@@")
-        log_msg "Attempting to set NEW_XFCE_BG: $NEW_XFCE_BG"
-        #su "$CURR_USER" -c "dbus-launch xfce4-set-wallpaper $NEW_XFCE_BG" || true;
-
-    # ?? why did I have this too? Doesn't sed below work?? maybe not....
-    #        xmlstarlet ed --inplace -u \
-    #        '//channel[@name="xfce4-desktop"]/property[@name="backdrop"]/property[@name="screen0"]/property[@name="monitorVirtual-1"]/property[@name="workspace0"]/property[@name="last-image"]/@value' \
-    #        -v "$NEW_XFCE_BG" $XFCE_DESKTOP
-
-        #set ALL properties with name "last-image" to use value of new background
-        sed -i -e 's@\(name="last-image"\).*@\1 type="string" value="'"$NEW_XFCE_BG"'"/>@' \
-            $XFCE_DESKTOP
-    fi
-
-    # sync GNOME background to AccountsService background
-    NEW_AS_BG=$(echo "$GNOME_BG" | sed "s@file://@@")
-    if [ "$AS_BG" != "$NEW_AS_BG" ]; then
-        sed -i -e "s@\(BackgroundFile=\).*@\1$NEW_AS_BG@" $AS_FILE
-    fi
-;;
-
-xfce|xubuntu)
-    # apply XFCE settings to other DEs
-    #XFCE_BG_URL=$(urlencode $XFCE_BG)
-    XFCE_BG_NO_QUOTE=$(echo "$XFCE_BG" | sed "s@'@@g")
-
-    #echo "xfce bg url: $XFCE_BG_URL" | tee -a $LOGFILE
-    log_msg "Previous Session XFCE: Sync to other DEs"
-
-    if [ -x /usr/bin/cinnamon ]; then
-        # sync XFCE background to Cinnamon background
-        gsettings_set org.cinnamon.desktop.background picture-uri "'file://$XFCE_BG_NO_QUOTE'"
-    fi
-
-    if [ -x /usr/bin/gnome-shell ]; then
-        # sync XFCE background to GNOME background
-        gsettings_set org.gnome.desktop.background picture-uri "'file://$XFCE_BG_NO_QUOTE'"
-    fi
-
-    # 20.04: I believe XFCE is properly setting AS so not repeating here
-    #    # sync XFCE background to AccountsService background
-    #    NEW_AS_BG="'$XFCE_BG'"
-    #    if [ "$AS_BG" != "$NEW_AS_BG" ];
-    #    then
-    #        sed -i -e "s@\(BackgroundFile=\).*@\1$NEW_AS_BG@" $AS_FILE
-    #    fi
-;;
-
-*)
-    # $PREV_SESSION unknown
-    log_msg "Unsupported previous session: $PREV_SESSION"
-    log_msg "Session NOT sync'd to other sessions"
-;;
-
-esac
 
 # ------------------------------------------------------------------------------
 # Processing based on current session
@@ -488,7 +293,7 @@ cinnamon|cinnamon2d)
     #   installed.
     if [ -x /usr/bin/gnome-shell ]; then
         gsettings_set org.gnome.desktop.background show-desktop-icons false
-        gsettings_set org.gnome.desktop.background draw-background false
+        gsettings_set com.canonical.unity.desktop.background draw-background false
     fi
 
     # ENABLE notify-osd
@@ -501,6 +306,20 @@ cinnamon|cinnamon2d)
     if [[ -e /usr/share/dbus-1/services/org.gnome.ScreenSaver.service ]]; then
         log_msg "Disabling gnome-screensaver for cinnamon session"
         mv /usr/share/dbus-1/services/org.gnome.ScreenSaver.service{,.disabled}
+    fi
+
+    # disable and stop tracker services
+    if [ -x /usr/bin/tracker ] | [ -x /usr/bin/tracker3 ]; then
+        log_msg "Disabling and stopping tracker services"
+        # stop and disable tracker services
+        TRACKER_SERVICES=$(ls /lib/systemd/user/tracker* | sed -e "s@/lib/systemd/user/@@g")
+        for SERVICE in "$TRACKER_SERVICES"
+        do
+            #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user stop $SERVICE
+            sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user mask $SERVICE 2>&1 | tee -a $LOGFILE
+        done
+        # kill currently running tracker services
+        killall -r tracker-.*
     fi
 
     # --------------------------------------------------------------------------
@@ -516,7 +335,7 @@ cinnamon|cinnamon2d)
 
     if [ -x /usr/bin/gnome-shell ]; then
         log_msg "end cinnamon detected - NAUTILUS show desktop icons: $(gsettings_get org.gnome.desktop.background show-desktop-icons)"
-        log_msg "end cinnamon detected - NAUTILUS draw background: $(gsettings_get org.gnome.desktop.background draw-background)"
+        log_msg "end cinnamon detected - NAUTILUS draw background: $(gsettings_get com.canonical.unity.desktop.background draw-background)"
     fi
 
     # Stop xfce4-notifyd.service.
@@ -563,7 +382,7 @@ ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback
     if [[ $curr_children = "['Utilities', 'YaST']" ]] || \
         [[ $curr_children = "['Utilities', 'Sundry', 'YaST']" ]]; then
         log_msg "Resetting gsettings $key_path $key"
-        sudo --user=$CURR_USER --set-home dbus-launch gsettings reset "$key_path" "$key" 2>&1 >/dev/null | tee -a "$LOG"
+        sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings reset "$key_path" "$key" 2>&1 >/dev/null | tee -a "$LOG"
     fi
 
     # Make adjustments if using lightdm.
@@ -584,7 +403,7 @@ ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback
     if [ -e /usr/share/applications/org.gnome.Nautilus.desktop ]; then
         # Allow Nautilus to draw the desktop
         gsettings_set org.gnome.desktop.background show-desktop-icons true
-        gsettings_set org.gnome.desktop.background draw-background true
+        gsettings_set com.canonical.unity.desktop.background draw-background true
 
         # Ensure Nautilus default folder handler
         sed -i \
@@ -598,6 +417,19 @@ ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback
     if [ -e /usr/share/dbus-1/services/org.freedesktop.Notifications.service.disabled ]; then
         log_msg "Enabling notify-osd for gnome/ubuntu session"
         mv /usr/share/dbus-1/services/org.freedesktop.Notifications.service{.disabled,}
+    fi
+
+    # enable and start tracker services
+    if [ -x /usr/bin/tracker ] | [ -x /usr/bin/tracker3 ]; then
+        # enable tracker services
+        log_msg "Enabling and starting tracker services"
+        TRACKER_SERVICES=$(ls /lib/systemd/user/tracker* | sed -e "s@/lib/systemd/user/@@g")
+        for SERVICE in "$TRACKER_SERVICES"
+        do
+            sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user unmask $SERVICE 2>&1 | tee -a $LOGFILE
+            #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user enable $SERVICE
+            #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user start $SERVICE
+        done
     fi
 
     # --------------------------------------------------------------------------
@@ -675,7 +507,7 @@ xfce|xubuntu)
     #   installed.
     if [ -x /usr/bin/gnome-shell ]; then
         gsettings_set org.gnome.desktop.background show-desktop-icons false
-        gsettings_set org.gnome.desktop.background draw-background false
+        gsettings_set com.canonical.unity.desktop.background draw-background false
     fi
 
     # DISABLE notify-osd (xfce uses xfce4-notifyd)
@@ -688,6 +520,19 @@ xfce|xubuntu)
     if [[ -e /usr/share/dbus-1/services/org.gnome.ScreenSaver.service ]]; then
         log_msg "Disabling gnome-screensaver for cinnamon session"
         mv /usr/share/dbus-1/services/org.gnome.ScreenSaver.service{,.disabled}
+    fi
+
+    # disable and stop tracker services
+    if [ -x /usr/bin/tracker ] | [ -x /usr/bin/tracker3 ]; then
+        log_msg "Disabling and stopping tracker services"
+        TRACKER_SERVICES=$(ls /lib/systemd/user/tracker* | sed -e "s@/lib/systemd/user/@@g")
+        for SERVICE in "$TRACKER_SERVICES"
+        do
+            #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user stop $SERVICE
+            sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user mask $SERVICE 2>&1 | tee -a $LOGFILE
+        done
+        # kill currently running tracker services
+        killall -r tracker-.*
     fi
 
     # --------------------------------------------------------------------------
@@ -729,64 +574,6 @@ xfce|xubuntu)
             -u '//channel[@name="xfce4-desktop"]/property[@name="desktop-icons"]/property[@name="style"]/@value' \
             -v "0" $XFCE_DESKTOP
     fi
-
-    # skypeforlinux: can't start minimized in xfce or will end up with an
-    # empty window frame that can't be closed (without re-activating the
-    # empty frame by clicking on the panel icon).  Note above skypeforlinux
-    # autolaunch will always start it minimized (after 10 second delay)
-#    if [ -e /home/$CURR_USER/.config/skypeforlinux/settings.json ];
-#    then
-#        # set launchMinimized = false
-#        sed -i -e 's@"app.launchMinimized":true@"app.launchMinimized":false@' \
-#            /home/$CURR_USER/.config/skypeforlinux/settings.json
-#    fi
-
-    # xfce clock applet loses it's config if opened and closed without first
-    #    stopping the xfce4-panel.  So reset to defaults
-    # https://askubuntu.com/questions/959339/xfce-panel-clock-disappears
-#    XFCE_DEFAULT_PANEL="/etc/xdg/xdg-xfce/xfce4/panel/default.xml"
-#    XFCE_PANEL="/home/$CURR_USER/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml"
-#    if [ -e "$XFCE_PANEL" ];
-#    then
-        # using xmlstarlet since can't be sure of clock plugin #
-#        DEFAULT_DIGITAL_FORMAT=$(xmlstarlet sel -T -t -m \
-#            '//channel[@name="xfce4-panel"]/property[@name="plugins"]/property[@value="clock"]/property[@name="digital-format"]/@value' \
-#           -v . -n $XFCE_DEFAULT_PANEL)
-        #    DIGITAL_FORMAT=$(xmlstarlet sel -T -t -m \
-        #        '//channel[@name="xfce4-panel"]/property[@name="plugins"]/property[@value="clock"]/property[@name="digital-format"]/@value' \
-        #        -v . -n $XFCE_PANEL)
-#        BLANK_DIGITAL_FORMAT=$(grep '"digital-format" type="string" value=""' $XFCE_PANEL)
-
- #       if [ "$BLANK_DIGITAL_FORMAT" ];
-  #      then
-#            if [ $DEBUG ];
-#            then
-#                echo "xfce4-panel clock digital-format removed: resetting" | tee -a $LOGFILE
-#            fi
-            # rik: below doesn't work since when $XFCE_PANEL put in ~/.config the NAMEs
-            # are removed from the plugin properties: don't want to rely on plugin number so
-            # instead will have to hack it with sed
-            #        xmlstarlet ed --inplace -u \
-            #            '//channel[@name="xfce4-panel"]/property[@name="plugins"]/property[@value="clock"]/property[@name="digital-format"]/@value' \
-            #            -v "$DEFAULT_DIGITAL_FORMAT" $XFCE_PANEL
-#            sed -i -e 's@\("digital-format" type="string" value=\)""@\1"'"$DEFAULT_DIGITAL_FORMAT"'"@' \
-#                $XFCE_PANEL
-#        fi
-
- #       DEFAULT_TOOLTIP_FORMAT=$(xmlstarlet sel -T -t -m \
-  #          '//channel[@name="xfce4-panel"]/property[@name="plugins"]/property[@value="clock"]/property[@name="tooltip-format"]/@value' \
-   #         -v . -n $XFCE_DEFAULT_PANEL)
-    #    BLANK_TOOLTIP_FORMAT=$(grep '"tooltip-format" type="string" value=""' $XFCE_PANEL)
-
-     #   if [ "$BLANK_TOOLTIP_FORMAT" ];
-      #  then
-       #     if [ $DEBUG ];
-        #    then
-         #       echo "xfce4-panel clock tooltip-format removed: resetting" | tee -a $LOGFILE
-          #  fi
-           # sed -i -e 's@\("tooltip-format" type="string" value=\)""@\1"'"$DEFAULT_TOOLTIP_FORMAT"'"@' $XFCE_PANEL
-  #      fi
- #   fi
 ;;
 
 *)
@@ -803,12 +590,6 @@ xfce|xubuntu)
 esac
 
 # ------------------------------------------------------------------------------
-# SET PREV Session file for user
-# ------------------------------------------------------------------------------
-# > This is now done by "set-session-env.sh"
-#echo $CURR_SESSION > $PREV_SESSION_FILE
-
-# ------------------------------------------------------------------------------
 # FINISHED
 # ------------------------------------------------------------------------------
 
@@ -822,40 +603,20 @@ fi
 
 log_msg "Final settings:"
 
-if [ -x /usr/bin/cinnamon ]; then
-    CINNAMON_BG_NEW=$(gsettings_get org.cinnamon.desktop.background picture-uri)
-    log_msg "cinnamon bg NEW: $CINNAMON_BG_NEW"
-fi
-
-if [ -x /usr/bin/xfce4-session ]; then
-    #XFCE_BG_NEW=$(su "$CURR_USER" -c "dbus-launch xfconf-query -p /backdrop/screen0/monitor0/workspace0/last-image -c xfce4-desktop" || true;)
-    XFCE_BG_NEW=$(xmlstarlet sel -T -t -m \
-        '//channel[@name="xfce4-desktop"]/property[@name="backdrop"]/property[@name="screen0"]/property[@name="monitorVirtual-1"]/property[@name="workspace0"]/property[@name="last-image"]/@value' \
-        -v . -n $XFCE_DESKTOP)
-    log_msg "xfce bg NEW: $XFCE_BG_NEW"
-fi
-
-if [ -x /usr/bin/gnome-shell ]; then
-    GNOME_BG_NEW=$(gsettings_get org.gnome.desktop.background picture-uri)
-    log_msg "gnome bg NEW: $GNOME_BG_NEW"
-fi
-
-AS_BG_NEW=$(sed -n "s@BackgroundFile=@@p" "$AS_FILE")
-log_msg "as bg NEW: $AS_BG_NEW"
-
 if [ -x /usr/bin/nemo ]; then
     log_msg "NEMO show desktop icons: $(gsettings_get org.nemo.desktop desktop-layout)"
 fi
 
 if [ -x /usr/bin/nautilus ]; then
     log_msg "NAUTILUS show desktop icons: $(gsettings_get org.gnome.desktop.background show-desktop-icons)"
-    log_msg "NAUTILUS draw background: $(gsettings_get org.gnome.desktop.background draw-background)"
+    log_msg "NAUTILUS draw background: $(gsettings_get com.canonical.unity.desktop.background draw-background)"
 fi
 
 # Kill dconf and dbus processes that were started during this script: often
 #   they are not getting cleaned up leaving several "orphaned" processes. It
 #   isn't terrible to keep them running but is more of a "housekeeping" item.
 
+END_PID_DCONF=$(pidof dconf-service)
 REMOVE_PID_DCONF=$END_PID_DCONF
 # thanks to nate marti for cleaning up this detection of which PIDs need killing
 for p in $PID_DCONF; do
@@ -876,8 +637,13 @@ log_msg "dbus pid start: $PID_DBUS"
 log_msg "dbus pid end: $END_PID_DBUS"
 log_msg "dbus pid to kill: $REMOVE_PID_DBUS"
 
-kill -9 $REMOVE_PID_DCONF
-kill -9 $REMOVE_PID_DBUS
+if [ "$REMOVE_PID_DCONF" ]; then
+    kill -9 $REMOVE_PID_DCONF
+fi
+
+if [ "$REMOVE_PID_DBUS" ]; then
+    kill -9 $REMOVE_PID_DBUS
+fi
 
 # Ensure files correctly owned by user
 chown -R $CURR_USER:$CURR_USER /home/$CURR_USER/.cache/

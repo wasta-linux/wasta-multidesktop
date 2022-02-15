@@ -125,6 +125,11 @@ echo
 # Sending any "error" to null (if key not found don't want to worry user)
 glib-compile-schemas /usr/share/glib-2.0/schemas/ # > /dev/null 2>&1 || true;
 
+echo
+echo "enable wasta-multidesktop@.service"
+echo
+systemctl enable wasta-multidesktop@.service
+
 # ------------------------------------------------------------------------------
 # Finished
 # ------------------------------------------------------------------------------

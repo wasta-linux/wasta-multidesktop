@@ -1,0 +1,16 @@
+[Unit]
+Description=Wasta Multidesktop for uid %i
+# Runs on login / logout as root
+Requires=user@%i.service graphical.target
+After=graphical.target
+
+[Service]
+Type=simple
+RemainAfterExit=yes
+#ExecStartPre=/bin/sleep 15
+ExecStart=/usr/share/wasta-multidesktop/scripts/wasta-login.sh %i
+ExecStop=/usr/share/wasta-multidesktop/scripts/wasta-logout.sh %i
+#TimeoutStartSec=10
+
+[Install]
+WantedBy=user@%i.service

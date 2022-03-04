@@ -62,12 +62,16 @@ gsettings_get() {
     # NOTE: There's a security benefit of using sudo or runuser instead of su.
     #   su adds the user's entire environment, while sudo --set-home and runuser
     #   only set LOGNAME, USER, and HOME (sudo also sets MAIL) to match the user's.
+
+    # doesn't work on logout because /run/user/$CURR_UID has already been removed
     #value=$(sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings get "$1" "$2")
     #value=$(/usr/sbin/runuser -u $CURR_USER -- dbus-launch gsettings get "$1" "$2")
 
+    #log_msg "$CURR_USER gsettings get value: $value"
+
 #TODO: consider using sudo or runuser as  nate suggests
 
-    value=$(su $CURR_USER -c "dbus-launch gsettings get $1 $2")
+    value=$(sudo --user=$CURR_USER dbus-launch gsettings get "$1" "$2")
     echo $value
 }
 
@@ -75,19 +79,26 @@ gsettings_set() {
     # $1: key_path
     # $2: key
     # $3: value
+
+    #log_msg "$CURR_USER gsettings set $1 $2 $3"
+
     # ON LOGOUT the BUS is already closed I suspect, thus this isn't working!
     #sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings set "$1" "$2" "$3" || true;
     #/usr/sbin/runuser -u $CURR_USER -- dbus-launch gsettings set "$1" "$2" "$3" || true;
-    su "$CURR_USER" -c "dbus-launch gsettings set $1 $2 $3" || true;
+    sudo --user=$CURR_USER dbus-launch gsettings set "$1" "$2" "$3" || true;
 }
 
 # ------------------------------------------------------------------------------
 # Main Processing
 # ------------------------------------------------------------------------------
 
+# Get initial dconf/dbus pids.
+PID_DCONF=$(pidof dconf-service)
+PID_DBUS=$(pidof dbus-daemon)
+
 # Log initial info.
 log_msg
-log_msg "$(date) starting wasta-logout"
+log_msg "$(date) starting wasta-logout for $CURR_USER"
 
 # ENV variables set by DIR/scripts/set-session-env.sh:
 #   - CURR_DM
@@ -105,16 +116,17 @@ log_msg "$(date) starting wasta-logout"
 #    exit 0
 #fi
 
+log_msg "curr uid: $CURR_UID"
+log_msg "curr user: $CURR_USER"
+
 # get curr_session, else exit
 if [[ -e "$CURR_SESSION_FILE" ]]; then
     CURR_SESSION=$(cat $CURR_SESSION_FILE)
 else
-    log_msg "ERROR: no CURR_SESSION_FILE: $CURR_SESSION_FILE"
+    log_msg "EXITING: no CURR_SESSION_FILE for user $CURR_USER - likely not a GUI session"
     exit 0
 fi
 
-log_msg "curr uid: $CURR_UID"
-log_msg "curr user: $CURR_USER"
 log_msg "current session: $CURR_SESSION"
 
 AS_FILE="/var/lib/AccountsService/users/$CURR_USER"
@@ -265,6 +277,40 @@ rm $CURR_SESSION_FILE
 # killall snapd processes (these often don't close on shutdown)
 killall snapd 2>&1 || true;
 
-log_msg "$(date) exiting wasta-logout"
+
+# Kill dconf and dbus processes that were started during this script: often
+#   they are not getting cleaned up leaving several "orphaned" processes. It
+#   isn't terrible to keep them running but is more of a "housekeeping" item.
+
+END_PID_DCONF=$(pidof dconf-service)
+REMOVE_PID_DCONF=$END_PID_DCONF
+# thanks to nate marti for cleaning up this detection of which PIDs need killing
+for p in $PID_DCONF; do
+    REMOVE_PID_DCONF=$(echo $REMOVE_PID_DCONF | sed "s/$p//")
+done
+
+END_PID_DBUS=$(pidof dbus-daemon)
+REMOVE_PID_DBUS=$END_PID_DBUS
+# thanks to nate marti for cleaning up this detection of which PIDs need killing
+for p in $PID_DBUS; do
+    REMOVE_PID_DBUS=$(echo $REMOVE_PID_DBUS | sed "s/$p//")
+done
+
+log_msg "dconf pid start: $PID_DCONF"
+log_msg "dconf pid end: $END_PID_DCONF"
+log_msg "dconf pid to kill: $REMOVE_PID_DCONF"
+log_msg "dbus pid start: $PID_DBUS"
+log_msg "dbus pid end: $END_PID_DBUS"
+log_msg "dbus pid to kill: $REMOVE_PID_DBUS"
+
+if [ "$REMOVE_PID_DCONF" ]; then
+    kill -9 $REMOVE_PID_DCONF
+fi
+
+if [ "$REMOVE_PID_DBUS" ]; then
+    kill -9 $REMOVE_PID_DBUS
+fi
+
+log_msg "$(date) exiting wasta-logout for $CURR_USER"
 
 exit 0

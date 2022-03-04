@@ -104,6 +104,8 @@ gsettings_get() {
     # NOTE: There's a security benefit of using sudo or runuser instead of su.
     #   su adds the user's entire environment, while sudo --set-home and runuser
     #   only set LOGNAME, USER, and HOME (sudo also sets MAIL) to match the user's.
+
+    # this works without dbus-launch because user dbus created already
     value=$(sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings get "$1" "$2")
     #value=$(/usr/sbin/runuser -u $CURR_USER -- dbus-launch gsettings get "$1" "$2")
     #value=$(su $CURR_USER -c "dbus-launch gsettings get $1 $2")
@@ -148,7 +150,7 @@ PID_DBUS=$(pidof dbus-daemon)
 
 # Log initial info.
 log_msg
-log_msg "$(date) starting wasta-login"
+log_msg "$(date) starting wasta-login for $CURR_USER"
 
 # ENV variables set by DIR/scripts/set-session-env.sh:
 #   - CURR_DM
@@ -174,14 +176,14 @@ log_msg "current session id: $CURR_SESSION_ID"
 # check session data
 if [[ "$CURR_SESSION_ID" ]]; then
     CURR_SESSION=$(loginctl show-session $CURR_SESSION_ID | grep Desktop= | sed s/Desktop=//)
-    if [[ "CURR_SESSION" ]]; then
+    if [[ "$CURR_SESSION" ]]; then
         # graphical login - get DM and save current session
         CURR_DM=$(loginctl show-session $CURR_SESSION_ID | grep Service= | sed s/Service=//)
         log_msg "Setting CURR_SESSION:$CURR_SESSION in CURR_SESSION_FILE:$CURR_SESSION_FILE"
         echo "$CURR_SESSION" > $CURR_SESSION_FILE
     else
         # Not a graphical session since no Desktop entry in loginctl"
-        log_msg "EXITING: not a graphical login since no CURR_SESSION for CURR_SESSION_ID:$CURR_SESSION_ID"
+        log_msg "EXITING: not a GUI session for user $CURR_USER"
         exit 0
     fi
 else
@@ -218,6 +220,12 @@ fi
 if [ -x /usr/bin/nautilus ]; then
     gsettings_set org.gnome.nautilus.preferences show-hidden-files false
 fi
+
+#RIK-TEST SEEMS to work, meaning don't need to toggle nemo / nautilus depending on desktop, just leave both drawing icons, they stay out of eachothers way (well actually the unity setting for gnome not working, is based on extension now......
+gsettings_set org.nemo.desktop desktop-layout "'true::false'"
+gsettings_set org.gnome.desktop.background show-desktop-icons true
+gsettings_set com.canonical.unity.desktop.background draw-background true
+gsettings_set org.nemo.desktop ignored-desktop-handlers "['conky', 'xfdesktop']"
 
 if [ -x /usr/bin/nemo ]; then
     # Ensure Nemo not showing hidden files (power users may be annoyed)
@@ -276,7 +284,7 @@ cinnamon|cinnamon2d)
 
     if [ -x /usr/bin/nemo ]; then
         # allow nemo to draw the desktop
-        gsettings_set org.nemo.desktop desktop-layout "'true::false'"
+        #gsettings_set org.nemo.desktop desktop-layout "'true::false'"
 
         # Ensure Nemo default folder handler
         sed -i \
@@ -300,18 +308,20 @@ cinnamon|cinnamon2d)
     toggle_apps_visibility GNOME_APPS 'hide'
 
     # Blueman-applet may be active: kill (will not error if not found)
-    if [ "$(pgrep blueman-applet)" ]; then
-        killall blueman-applet | tee -a $LOGFILE
-    fi
+
+# rumor is that Mint 21 will h ave blueman as default not blueberry
+    #if [ "$(pgrep blueman-applet)" ]; then
+    #    killall blueman-applet | tee -a $LOGFILE
+    #fi
 
     # Prevent Gnome from drawing the desktop (for Xubuntu, Nautilus is not
     #   installed but these settings were still true, thus not allowing nemo
     #   to draw the desktop. So set to false all the time even if nautilus not
     #   installed.
-    if [ -x /usr/bin/gnome-shell ]; then
-        gsettings_set org.gnome.desktop.background show-desktop-icons false
-        gsettings_set com.canonical.unity.desktop.background draw-background false
-    fi
+    #if [ -x /usr/bin/gnome-shell ]; then
+        #gsettings_set org.gnome.desktop.background show-desktop-icons false
+        #gsettings_set com.canonical.unity.desktop.background draw-background false
+    #fi
 
     # ENABLE notify-osd
     if [ -e /usr/share/dbus-1/services/org.freedesktop.Notifications.service.disabled ]; then
@@ -346,14 +356,14 @@ cinnamon|cinnamon2d)
     log_msg "Hiding XFCE apps from the desktop user"
     toggle_apps_visibility THUNAR_APPS 'hide'
 
-    if [ -x /usr/bin/nemo ]; then
-        log_msg "End cinnamon detected - NEMO show desktop icons: $(gsettings_get org.nemo.desktop desktop-layout)"
-    fi
+    #if [ -x /usr/bin/nemo ]; then
+    #    log_msg "End cinnamon detected - NEMO show desktop icons: $(gsettings_get org.nemo.desktop desktop-layout)"
+   # fi
 
-    if [ -x /usr/bin/gnome-shell ]; then
-        log_msg "end cinnamon detected - NAUTILUS show desktop icons: $(gsettings_get org.gnome.desktop.background show-desktop-icons)"
-        log_msg "end cinnamon detected - NAUTILUS draw background: $(gsettings_get com.canonical.unity.desktop.background draw-background)"
-    fi
+#    if [ -x /usr/bin/gnome-shell ]; then
+#        log_msg "end cinnamon detected - NAUTILUS show desktop icons: $(gsettings_get org.gnome.desktop.background show-desktop-icons)"
+#        log_msg "end cinnamon detected - NAUTILUS draw background: $(gsettings_get com.canonical.unity.desktop.background draw-background)"
+ #   fi
 
     # Stop xfce4-notifyd.service.
     # su $CURR_USER -c "dbus-launch systemctl --user disable xfce4-notifyd.service"
@@ -419,8 +429,8 @@ ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback
 
     if [ -e /usr/share/applications/org.gnome.Nautilus.desktop ]; then
         # Allow Nautilus to draw the desktop
-        gsettings_set org.gnome.desktop.background show-desktop-icons true
-        gsettings_set com.canonical.unity.desktop.background draw-background true
+        #gsettings_set org.gnome.desktop.background show-desktop-icons true
+        #gsettings_set com.canonical.unity.desktop.background draw-background true
 
         # Ensure Nautilus default folder handler
         sed -i \
@@ -472,10 +482,10 @@ xfce|xubuntu)
         toggle_apps_visibility XFCE_APPS 'show'
 
         # set nemo to draw the desktop
-        gsettings_set org.nemo.desktop desktop-layout "'true::false'"
+        #gsettings_set org.nemo.desktop desktop-layout "'true::false'"
 
         # ensure nemo can start if xfdesktop already running
-        gsettings_set org.nemo.desktop ignored-desktop-handlers \"['conky', 'xfdesktop']\"
+        #gsettings_set org.nemo.desktop ignored-desktop-handlers \"['conky', 'xfdesktop']\"
 
         # Ensure Nemo default folder handler
         sed -i \
@@ -522,10 +532,10 @@ xfce|xubuntu)
     #   installed but these settings were still true, thus not allowing nemo
     #   to draw the desktop. So set to false all the time even if nautilus not
     #   installed.
-    if [ -x /usr/bin/gnome-shell ]; then
-        gsettings_set org.gnome.desktop.background show-desktop-icons false
-        gsettings_set com.canonical.unity.desktop.background draw-background false
-    fi
+    #if [ -x /usr/bin/gnome-shell ]; then
+        #gsettings_set org.gnome.desktop.background show-desktop-icons false
+        #gsettings_set com.canonical.unity.desktop.background draw-background false
+    #fi
 
     # DISABLE notify-osd (xfce uses xfce4-notifyd)
     if [ -e /usr/share/dbus-1/services/org.freedesktop.Notifications.service ]; then
@@ -667,6 +677,6 @@ chown -R $CURR_USER:$CURR_USER /home/$CURR_USER/.cache/
 chown -R $CURR_USER:$CURR_USER /home/$CURR_USER/.config/
 chown -R $CURR_USER:$CURR_USER /home/$CURR_USER/.dbus/
 
-log_msg "$(date) exiting wasta-login"
+log_msg "$(date) exiting wasta-login for $CURR_USER"
 
 exit 0

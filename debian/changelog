@@ -1,6 +1,13 @@
+wasta-multidesktop (22.04.0.6) jammy; urgency=medium
+
+  * wasta-login: do NOT need to toggle drawing of desktop anymore
+
+ -- Rik Shaw <rikshaw76@gmail.com>  Fri, 04 Mar 2022 17:09:26 -0600
+
 wasta-multidesktop (22.04.0.5) jammy; urgency=medium
 
-  * don't use set-session-env since greatly simplified getting and setting CURR_SESSION
+  * don't use set-session-env since greatly simplified getting
+    and setting CURR_SESSION
   * make gsettings calls different so "stick" on logout
 
  -- Rik Shaw <rikshaw76@gmail.com>  Fri, 04 Mar 2022 12:36:19 -0600

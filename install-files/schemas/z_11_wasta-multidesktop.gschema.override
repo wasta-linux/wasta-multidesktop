@@ -21,10 +21,13 @@
 # arc-darker '#30343A' ==> background-color = '#30343A'
 # ambiance dark gray color: '#3C3C3C' ==> background-color = '#3C3C3C'
 
-[org.gnome.desktop.background]
+[org.gnome.desktop.background:ubuntu]
 show-desktop-icons = true
 picture-uri = 'file:///usr/share/backgrounds/wasta/wasta-trianglify.png'
 
+# NOTE: for 22.04 gnome settings don't "stick" because need to append :ubuntu
+#   like this: [org.gnome.desktop.interface:ubuntu] BUT not doing so that
+#   users can have default ubuntu settings (Yaru, etc)
 [org.gnome.desktop.interface]
 clock-format = '12h'
 clock-show-date = true

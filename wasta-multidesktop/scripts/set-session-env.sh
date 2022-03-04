@@ -11,6 +11,10 @@
 #
 # ------------------------------------------------------------------------------
 
+# 2022-03-04 rik: not used anymore (greatly simplified getting curr session using loginctl)
+exit 0
+
+
 # OR those 2 should be exported so available here??
 #INPUT: $1 should be logdir
 #INPUT: $2 should be debug value (or file?)
@@ -24,8 +28,9 @@ fi
 
 CURR_DM=''
 CURR_SESSION=''
-PREV_SESSION_FILE=''
+CURR_SESSION_FILE=''
 PREV_SESSION=''
+PREV_SESSION_FILE=''
 
 LOGDIR="/var/log/wasta-multidesktop"
 mkdir -p "$LOGDIR"
@@ -57,8 +62,9 @@ script_exit() {
     # Export variables.
     export CURR_DM
     export CURR_SESSION
-    export PREV_SESSION
-    export PREV_SESSION_FILE
+    export CURR_SESSION_FILE
+    #export PREV_SESSION
+    #export PREV_SESSION_FILE
 
     # rik: since this runs on login AND logout do not want to update
     #    PREV_SESSION_FILE here, instead only do in wasta-logout.sh
@@ -98,17 +104,26 @@ log_msg "Setting CURR_USER:$CURR_USER"
 CURR_SESSION_FILE="${LOGDIR}/$CURR_USER-curr-session"
 touch $CURR_SESSION_FILE
 
-# Get the user's previous session.
+# Get the user's current and previous session files
 PREV_SESSION_FILE="${LOGDIR}/$CURR_USER-prev-session"
 PREV_SESSION=$(cat $PREV_SESSION_FILE)
 
 CURR_SESSION_ID=$(loginctl show-user $CURR_UID | grep Display= | sed s/Display=//)
-if ! [ $CURR_SESSION_ID ]; then
+# NOTE: will NOT be set on logout.... loginctl will display "State=closing"
+
+#if ! [ $CURR_SESSION_ID ]; then
     # NO display, so not graphical and don't continue
-    exit 0
+#    exit 0
+#fi
+
+# get other variables and save current session
+if [[ "$CURR_SESSION_ID" ]]; then
+    CURR_SESSION=$(loginctl show-session $CURR_SESSION_ID | grep Desktop= | sed s/Desktop=//)
+    CURR_DM=$(loginctl show-session $CURR_SESSION_ID | grep Service= | sed s/Service=//)
+
+    log_msg "Setting CURR_SESSION:$CURR_SESSION in CURR_SESSION_FILE:$CURR_SESSION_FILE"
+    echo "$CURR_SESSION" > $CURR_SESSION_FILE
 fi
-CURR_SESSION=$(loginctl show-session $CURR_SESSION_ID | grep Desktop= | sed s/Desktop=//)
-CURR_DM=$(loginctl show-session $CURR_SESSION_ID | grep Service= | sed s/Service=//)
 
 # Get current user and session name (can't depend on full env at login).
 if [[ $CURR_DM == 'gdm' ]]; then
@@ -150,12 +165,6 @@ elif [[ $CURR_DM == 'lightdm' ]]; then
 #            CURR_SESSION=$(cat $CURR_SESSION_FILE)
 #        fi
 #    fi
-fi
-
-# SAVE user's current session
-if [[ "$CURR_SESSION" ]]; then
-    log_msg "Setting CURR_SESSION:$CURR_SESSION in CURR_SESSION_FILE:$CURR_SESSION_FILE"
-    echo "$CURR_SESSION" > $PREV_SESSION_FILE
 fi
 
 script_exit 0

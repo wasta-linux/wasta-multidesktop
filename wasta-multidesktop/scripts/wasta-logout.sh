@@ -12,8 +12,9 @@
 
 CURR_UID=$1
 CURR_USER=$(id -un $CURR_UID)
-if [[ "$CURR_USER" == "root" ]] || [[ "$CURR_USER" == "lightdm" ]] || [[ "$CURR_USER" == "gdm" ]]; then
-    # do NOT process: curr user is root, lightdm, or gdm
+if [[ "$CURR_USER" == "root" ]] || [[ "$CURR_USER" == "lightdm" ]] || [[ "$CURR_USER" == "gdm" ]] || [[ "$CURR_USER" == "" ]]; then
+    # do NOT process: curr user is root, lightdm, gdm, or blank
+    echo "Don't process based on CURR_USER:$CURR_USER"
     exit 0
 fi
 
@@ -26,6 +27,8 @@ DEBUG_FILE="${LOGDIR}/debug"
 # Get DEBUG status.
 touch $DEBUG_FILE
 DEBUG=$(cat $DEBUG_FILE)
+
+CURR_SESSION_FILE="${LOGDIR}/$CURR_USER-curr-session"
 
 SUPPORTED_DMS="gdm lightdm"
 
@@ -59,9 +62,12 @@ gsettings_get() {
     # NOTE: There's a security benefit of using sudo or runuser instead of su.
     #   su adds the user's entire environment, while sudo --set-home and runuser
     #   only set LOGNAME, USER, and HOME (sudo also sets MAIL) to match the user's.
-    value=$(sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings get "$1" "$2")
+    #value=$(sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings get "$1" "$2")
     #value=$(/usr/sbin/runuser -u $CURR_USER -- dbus-launch gsettings get "$1" "$2")
-    #value=$(su $CURR_USER -c "dbus-launch gsettings get $1 $2")
+
+#TODO: consider using sudo or runuser as  nate suggests
+
+    value=$(su $CURR_USER -c "dbus-launch gsettings get $1 $2")
     echo $value
 }
 
@@ -69,9 +75,10 @@ gsettings_set() {
     # $1: key_path
     # $2: key
     # $3: value
-    sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings set "$1" "$2" "$3" || true;
+    # ON LOGOUT the BUS is already closed I suspect, thus this isn't working!
+    #sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings set "$1" "$2" "$3" || true;
     #/usr/sbin/runuser -u $CURR_USER -- dbus-launch gsettings set "$1" "$2" "$3" || true;
-    #su "$CURR_USER" -c "dbus-launch gsettings set $1 $2 $3" || true;
+    su "$CURR_USER" -c "dbus-launch gsettings set $1 $2 $3" || true;
 }
 
 # ------------------------------------------------------------------------------
@@ -90,7 +97,7 @@ log_msg "$(date) starting wasta-logout"
 # The script is sourced so that it can properly export the variables. Otherwise,
 #   wasta-login.sh would have to not be run until set-session-env.sh is finished.
 #   This also means that this script can't "exit", it must "return" instead.
-source $DIR/scripts/set-session-env.sh
+#source $DIR/scripts/set-session-env.sh
 
 #if [[ "$CURR_USER" == "gdm" ]] | [[ "$CURR_USER" == "lightdm" ]]; then
 #    # exit, don't run on DM userids
@@ -98,10 +105,16 @@ source $DIR/scripts/set-session-env.sh
 #    exit 0
 #fi
 
-log_msg "user: $USER"
+# get curr_session, else exit
+if [[ -e "$CURR_SESSION_FILE" ]]; then
+    CURR_SESSION=$(cat $CURR_SESSION_FILE)
+else
+    log_msg "ERROR: no CURR_SESSION_FILE: $CURR_SESSION_FILE"
+    exit 0
+fi
+
+log_msg "curr uid: $CURR_UID"
 log_msg "curr user: $CURR_USER"
-log_msg "curr usernum: $(id -u $CURR_USER)"
-log_msg "current dm: $CURR_DM"
 log_msg "current session: $CURR_SESSION"
 
 AS_FILE="/var/lib/AccountsService/users/$CURR_USER"
@@ -116,6 +129,7 @@ fi
 # Retrieve current AccountsService user background
 AS_BG=$(sed -n "s@BackgroundFile=@@p" $AS_FILE)
 
+# process based on PREV_SESSION because by time wasta-logout runs the graphical session is closed.
 case "$CURR_SESSION" in
 
 cinnamon|cinnamon2d)
@@ -228,7 +242,7 @@ xfce|xubuntu)
 
 *)
     # SESSION not supported
-    log_msg "Unsupported session: $XDG_SESSION_DESKTOP"
+    log_msg "Unsupported session: $CURR_SESSION"
     log_msg "Session NOT sync'd to other sessions"
 ;;
 
@@ -241,13 +255,12 @@ while [[ "$AS_BG_PATH" != / ]]; do chmod o+rx "$AS_BG_PATH"; AS_BG_PATH=$(dirnam
 chmod o+r "$AS_BG_NO_QUOTE"
 
 # save $PREV_SESSION
-log_msg "Setting CURR_SESSION:$CURR_SESSION to PREV_SESSION_FILE:$PREV_SESSION_FILE"
-echo $CURR_SESSION > $PREV_SESSION_FILE
+# log_msg "Setting CURR_SESSION:$CURR_SESSION to PREV_SESSION_FILE:$PREV_SESSION_FILE"
+# echo $CURR_SESSION > $PREV_SESSION_FILE
 
-# blank $CURR_SESSION
-CURR_SESSION_FILE="${LOGDIR}/$CURR_USER-curr-session"
-log_msg "Removing entry from CURR_SESSION_FILE:$CURR_SESSION_FILE"
-echo "" > $CURR_SESSION_FILE
+# remove $CURR_SESSION_FILE
+log_msg "Removing CURR_SESSION_FILE:$CURR_SESSION_FILE"
+rm $CURR_SESSION_FILE
 
 # killall snapd processes (these often don't close on shutdown)
 killall snapd 2>&1 || true;
@@ -255,4 +268,3 @@ killall snapd 2>&1 || true;
 log_msg "$(date) exiting wasta-logout"
 
 exit 0
-

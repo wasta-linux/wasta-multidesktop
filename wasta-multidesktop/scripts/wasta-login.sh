@@ -23,8 +23,9 @@
 
 CURR_UID=$1
 CURR_USER=$(id -un $CURR_UID)
-if [[ "$CURR_USER" == "root" ]] || [[ "$CURR_USER" == "lightdm" ]] || [[ "$CURR_USER" == "gdm" ]]; then
-    # do NOT process: curr user is root, lightdm, or gdm
+if [[ "$CURR_USER" == "root" ]] || [[ "$CURR_USER" == "lightdm" ]] || [[ "$CURR_USER" == "gdm" ]] || [[ "$CURR_USER" == "" ]]; then
+    # do NOT process: curr user is root, lightdm, gdm, or blank
+    echo "Don't process based on CURR_USER:$CURR_USER"
     exit 0
 fi
 
@@ -40,6 +41,8 @@ DEBUG_FILE="${LOGDIR}/debug"
 # Get DEBUG status.
 touch $DEBUG_FILE
 DEBUG=$(cat $DEBUG_FILE)
+
+CURR_SESSION_FILE="${LOGDIR}/$CURR_USER-curr-session"
 
 # The following apps lists are used to toggle apps' visibility off or on
 #   according to the CURR_SESSION variable.
@@ -155,15 +158,41 @@ log_msg "$(date) starting wasta-login"
 # The script is sourced so that it can properly export the variables. Otherwise,
 #   wasta-login.sh would have to not be run until set-session-env.sh is finished.
 #   This also means that this script can't "exit", it must "return" instead.
-source $DIR/scripts/set-session-env.sh $CURR_UID
+# source $DIR/scripts/set-session-env.sh $CURR_UID
+
 
 # set log title back to WMD (was set to WMD-env in sourced script above)
 title='WMD'
 
-log_msg "display manager: $CURR_DM"
+log_msg "current uid: $CURR_UID"
 log_msg "current user: $CURR_USER"
+
+CURR_SESSION_ID=$(loginctl show-user $CURR_UID | grep Display= | sed s/Display=//)
+
+log_msg "current session id: $CURR_SESSION_ID"
+
+# check session data
+if [[ "$CURR_SESSION_ID" ]]; then
+    CURR_SESSION=$(loginctl show-session $CURR_SESSION_ID | grep Desktop= | sed s/Desktop=//)
+    if [[ "CURR_SESSION" ]]; then
+        # graphical login - get DM and save current session
+        CURR_DM=$(loginctl show-session $CURR_SESSION_ID | grep Service= | sed s/Service=//)
+        log_msg "Setting CURR_SESSION:$CURR_SESSION in CURR_SESSION_FILE:$CURR_SESSION_FILE"
+        echo "$CURR_SESSION" > $CURR_SESSION_FILE
+    else
+        # Not a graphical session since no Desktop entry in loginctl"
+        log_msg "EXITING: not a graphical login since no CURR_SESSION for CURR_SESSION_ID:$CURR_SESSION_ID"
+        exit 0
+    fi
+else
+    # Shouldn't get here: no session id, so not graphical and don't continue
+    log_msg "EXITING... no CURR_SESSION_ID"
+    exit 0
+fi
+
 log_msg "current session: $CURR_SESSION"
-log_msg "PREV session for user: $PREV_SESSION"
+log_msg "display manager: $CURR_DM"
+
 if [ -x /usr/bin/nemo ]; then
     log_msg "TOP NEMO show desktop icons: $(gsettings_get org.nemo.desktop desktop-layout)"
 fi
@@ -171,18 +200,6 @@ fi
 if [ -x /usr/bin/nautilus ]; then
     log_msg "NAUTILUS show desktop icons: $(gsettings_get org.gnome.desktop.background show-desktop-icons)"
     log_msg "NAUTILUS draw background: $(gsettings_get com.canonical.unity.desktop.background draw-background)"
-fi
-
-# Check that CURR_USER is set.
-if ! [ $CURR_USER ]; then
-    log_msg "EXITING... no user found"
-    exit 0
-fi
-
-# Check that CURR_SESSION is set.
-if ! [ $CURR_SESSION ]; then
-    log_msg "EXITING... no session found"
-    exit 0
 fi
 
 # xfconfd: started but shouldn't be running (likely residual from previous

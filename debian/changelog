@@ -1,3 +1,9 @@
+wasta-multidesktop (22.04.0.7) jammy; urgency=medium
+
+  * wasta-login and wasta-logout cleanup
+
+ -- Rik Shaw <rikshaw76@gmail.com>  Mon, 07 Mar 2022 11:35:03 -0600
+
 wasta-multidesktop (22.04.0.6) jammy; urgency=medium
 
   * wasta-login: do NOT need to toggle drawing of desktop anymore

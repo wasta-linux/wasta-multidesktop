@@ -30,8 +30,6 @@ DEBUG=$(cat $DEBUG_FILE)
 
 CURR_SESSION_FILE="${LOGDIR}/$CURR_USER-curr-session"
 
-SUPPORTED_DMS="gdm lightdm"
-
 # ------------------------------------------------------------------------------
 # Define Functions
 # ------------------------------------------------------------------------------
@@ -63,13 +61,10 @@ gsettings_get() {
     #   su adds the user's entire environment, while sudo --set-home and runuser
     #   only set LOGNAME, USER, and HOME (sudo also sets MAIL) to match the user's.
 
-    # doesn't work on logout because /run/user/$CURR_UID has already been removed
+    # NOTE: below doesn't work on logout because /run/user/$CURR_UID has already
+    #  been removed by the time this script runs
     #value=$(sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings get "$1" "$2")
     #value=$(/usr/sbin/runuser -u $CURR_USER -- dbus-launch gsettings get "$1" "$2")
-
-    #log_msg "$CURR_USER gsettings get value: $value"
-
-#TODO: consider using sudo or runuser as  nate suggests
 
     value=$(sudo --user=$CURR_USER dbus-launch gsettings get "$1" "$2")
     echo $value
@@ -80,10 +75,6 @@ gsettings_set() {
     # $2: key
     # $3: value
 
-    #log_msg "$CURR_USER gsettings set $1 $2 $3"
-
-    # ON LOGOUT the BUS is already closed I suspect, thus this isn't working!
-    #sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings set "$1" "$2" "$3" || true;
     #/usr/sbin/runuser -u $CURR_USER -- dbus-launch gsettings set "$1" "$2" "$3" || true;
     sudo --user=$CURR_USER dbus-launch gsettings set "$1" "$2" "$3" || true;
 }
@@ -100,37 +91,23 @@ PID_DBUS=$(pidof dbus-daemon)
 log_msg
 log_msg "$(date) starting wasta-logout for $CURR_USER"
 
-# ENV variables set by DIR/scripts/set-session-env.sh:
-#   - CURR_DM
-#   - CURR_USER
-#   - CURR_SESSION
-#   - PREV_SESSION
-# The script is sourced so that it can properly export the variables. Otherwise,
-#   wasta-login.sh would have to not be run until set-session-env.sh is finished.
-#   This also means that this script can't "exit", it must "return" instead.
-#source $DIR/scripts/set-session-env.sh
-
-#if [[ "$CURR_USER" == "gdm" ]] | [[ "$CURR_USER" == "lightdm" ]]; then
-#    # exit, don't run on DM userids
-#    logmsg "Exiting: don't run for CURR_USER:$CURR_USER"
-#    exit 0
-#fi
+# set log title
+title='WMD-logout'
 
 log_msg "curr uid: $CURR_UID"
-log_msg "curr user: $CURR_USER"
 
 # get curr_session, else exit
 if [[ -e "$CURR_SESSION_FILE" ]]; then
     CURR_SESSION=$(cat $CURR_SESSION_FILE)
 else
-    log_msg "EXITING: no CURR_SESSION_FILE for user $CURR_USER - likely not a GUI session"
+    log_msg "EXITING: $CURR_SESSION_FILE doesn't exist: likely not a GUI session"
     exit 0
 fi
 
 log_msg "current session: $CURR_SESSION"
 
+# Retrieve AccountsService BackgroundFile value
 AS_FILE="/var/lib/AccountsService/users/$CURR_USER"
-
 # "-o" essential in case filename has a space in it.
 if ! [ $(grep -o "BackgroundFile=" "$AS_FILE") ]; then
     # Error, so BackgroundFile needs to be added to AS_FILE
@@ -141,7 +118,7 @@ fi
 # Retrieve current AccountsService user background
 AS_BG=$(sed -n "s@BackgroundFile=@@p" $AS_FILE)
 
-# process based on PREV_SESSION because by time wasta-logout runs the graphical session is closed.
+# Process based on current session (that is closing)
 case "$CURR_SESSION" in
 
 cinnamon|cinnamon2d)
@@ -167,6 +144,9 @@ cinnamon|cinnamon2d)
 
         NEW_XFCE_BG=$(echo "$BG" | sed "s@'file://@@" | sed "s@'\$@@")
         log_msg "Attempting to set NEW_XFCE_BG: $NEW_XFCE_BG"
+
+        # TODO-2022: does the below work? Try, maybe the problem is it then activates
+        # xfce session, but as this now triggers on logout it may not be bad??
         #su "$CURR_USER" -c "dbus-launch xfce4-set-wallpaper $NEW_XFCE_BG" || true;
 
     # ?? why did I have this too? Doesn't sed below work?? maybe not....
@@ -266,17 +246,12 @@ AS_BG_PATH=$(dirname "$AS_BG_NO_QUOTE")
 while [[ "$AS_BG_PATH" != / ]]; do chmod o+rx "$AS_BG_PATH"; AS_BG_PATH=$(dirname "$AS_BG_PATH"); done;
 chmod o+r "$AS_BG_NO_QUOTE"
 
-# save $PREV_SESSION
-# log_msg "Setting CURR_SESSION:$CURR_SESSION to PREV_SESSION_FILE:$PREV_SESSION_FILE"
-# echo $CURR_SESSION > $PREV_SESSION_FILE
-
 # remove $CURR_SESSION_FILE
 log_msg "Removing CURR_SESSION_FILE:$CURR_SESSION_FILE"
 rm $CURR_SESSION_FILE
 
 # killall snapd processes (these often don't close on shutdown)
 killall snapd 2>&1 || true;
-
 
 # Kill dconf and dbus processes that were started during this script: often
 #   they are not getting cleaned up leaving several "orphaned" processes. It

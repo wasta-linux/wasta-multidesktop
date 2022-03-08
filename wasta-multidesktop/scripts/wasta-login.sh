@@ -310,15 +310,15 @@ cinnamon|cinnamon2d)
     fi
 
     # disable and stop tracker services
-    # TODO-2022: can we do the above dbus-1 disabled / enabled tricks for tracker?
-    if [ -x /usr/bin/tracker ] | [ -x /usr/bin/tracker3 ]; then
+    if [[ -x /usr/bin/tracker ]] || [[ -x /usr/bin/tracker3 ]]; then
         log_msg "Disabling and stopping tracker services"
         # stop and disable tracker services
-        TRACKER_SERVICES=$(ls /lib/systemd/user/tracker* | sed -e "s@/lib/systemd/user/@@g")
+        TRACKER_SERVICES=$(ls /usr/share/dbus-1/services/*racker*)
         for SERVICE in "$TRACKER_SERVICES"
         do
             #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user stop $SERVICE
-            sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user mask $SERVICE 2>&1 | tee -a $LOGFILE
+            #sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user mask $SERVICE 2>&1 | tee -a $LOGFILE
+            mv $SERVICE{,.disabled}
         done
         # kill currently running tracker services
         killall -r tracker-.*
@@ -409,16 +409,16 @@ ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback
     fi
 
     # enable and start tracker services
-    # TODO-2022: again check if can be done with above enable disable tricks
     if [ -x /usr/bin/tracker ] | [ -x /usr/bin/tracker3 ]; then
         # enable tracker services
         log_msg "Enabling and starting tracker services"
-        TRACKER_SERVICES=$(ls /lib/systemd/user/tracker* | sed -e "s@/lib/systemd/user/@@g")
+        TRACKER_SERVICES=$(ls /usr/share/dbus-1/services/*racker*)
         for SERVICE in "$TRACKER_SERVICES"
         do
-            sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user unmask $SERVICE 2>&1 | tee -a $LOGFILE
+            #sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user unmask $SERVICE 2>&1 | tee -a $LOGFILE
             #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user enable $SERVICE
             #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user start $SERVICE
+            mv $SERVICE{.disabled,}
         done
     fi
 
@@ -509,14 +509,16 @@ xfce|xubuntu)
         mv /usr/share/dbus-1/services/org.gnome.ScreenSaver.service{,.disabled}
     fi
 
-    # disable and stop tracker services  - again check above if can be cleaner
-    if [ -x /usr/bin/tracker ] | [ -x /usr/bin/tracker3 ]; then
+    # disable and stop tracker services
+    if [[ -x /usr/bin/tracker ]] || [[ -x /usr/bin/tracker3 ]]; then
         log_msg "Disabling and stopping tracker services"
-        TRACKER_SERVICES=$(ls /lib/systemd/user/tracker* | sed -e "s@/lib/systemd/user/@@g")
+        # stop and disable tracker services
+        TRACKER_SERVICES=$(ls /usr/share/dbus-1/services/*racker*)
         for SERVICE in "$TRACKER_SERVICES"
         do
             #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user stop $SERVICE
-            sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user mask $SERVICE 2>&1 | tee -a $LOGFILE
+            #sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user mask $SERVICE 2>&1 | tee -a $LOGFILE
+            mv $SERVICE{,.disabled}
         done
         # kill currently running tracker services
         killall -r tracker-.*

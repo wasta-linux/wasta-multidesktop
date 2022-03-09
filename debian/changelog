@@ -1,3 +1,9 @@
+wasta-multidesktop (22.04.0.10) jammy; urgency=medium
+
+  * wasta-logout: update setting xfce background
+
+ -- Rik Shaw <rikshaw76@gmail.com>  Tue, 08 Mar 2022 21:34:49 -0600
+
 wasta-multidesktop (22.04.0.9) jammy; urgency=medium
 
   * wasta-login: correct tracker service selection list

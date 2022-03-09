@@ -144,10 +144,7 @@ cinnamon|cinnamon2d)
 
         NEW_XFCE_BG=$(echo "$BG" | sed "s@'file://@@" | sed "s@'\$@@")
         log_msg "Attempting to set NEW_XFCE_BG: $NEW_XFCE_BG"
-
-        # TODO-2022: does the below work? Try, maybe the problem is it then activates
-        # xfce session, but as this now triggers on logout it may not be bad??
-        #su "$CURR_USER" -c "dbus-launch xfce4-set-wallpaper $NEW_XFCE_BG" || true;
+        sudo --user="$CURR_USER" dbus-launch xfce4-set-wallpaper "$NEW_XFCE_BG"
 
     # ?? why did I have this too? Doesn't sed below work?? maybe not....
         #xmlstarlet ed --inplace -u \
@@ -155,8 +152,8 @@ cinnamon|cinnamon2d)
         #    -v "$NEW_XFCE_BG" $XFCE_DESKTOP
 
         #set ALL properties with name "last-image" to use value of new background
-        sed -i -e 's@\(name="last-image"\).*@\1 type="string" value="'"$NEW_XFCE_BG"'"/>@' \
-            $XFCE_DESKTOP
+        #sed -i -e 's@\(name="last-image"\).*@\1 type="string" value="'"$NEW_XFCE_BG"'"/>@' \
+        #    $XFCE_DESKTOP
     fi
 ;;
 
@@ -186,7 +183,7 @@ ubuntu|ubuntu-xorg|gnome|gnome-flashback-metacity|gnome-flashback-compiz|wasta-g
 
         NEW_XFCE_BG=$(echo "$BG" | sed "s@'file://@@" | sed "s@'\$@@")
         log_msg "Attempting to set NEW_XFCE_BG: $NEW_XFCE_BG"
-        #su "$CURR_USER" -c "dbus-launch xfce4-set-wallpaper $NEW_XFCE_BG" || true;
+        sudo --user="$CURR_USER" dbus-launch xfce4-set-wallpaper "$NEW_XFCE_BG"
 
     # ?? why did I have this too? Doesn't sed below work?? maybe not....
         #xmlstarlet ed --inplace -u \
@@ -194,8 +191,8 @@ ubuntu|ubuntu-xorg|gnome|gnome-flashback-metacity|gnome-flashback-compiz|wasta-g
         #    -v "$NEW_XFCE_BG" $XFCE_DESKTOP
 
         #set ALL properties with name "last-image" to use value of new background
-        sed -i -e 's@\(name="last-image"\).*@\1 type="string" value="'"$NEW_XFCE_BG"'"/>@' \
-            $XFCE_DESKTOP
+        #sed -i -e 's@\(name="last-image"\).*@\1 type="string" value="'"$NEW_XFCE_BG"'"/>@' \
+        #    $XFCE_DESKTOP
     fi
 ;;
 

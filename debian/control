@@ -8,8 +8,24 @@ Homepage: https://github.com/wasta-linux/wasta-multidesktop
 
 Package: wasta-multidesktop
 Architecture: all
-Depends: arc-theme, at, gdm | lightdm, jq, papirus-icon-theme, rename, systemd, wasta-app-tweaks, wasta-backgrounds, wasta-core, wasta-resources, wmctrl, xmlstarlet, ${misc:Depends}
-Recommends: arc-solid-theme, papirus-folders, wasta-papirus, wasta-vertex-ubuntu
+Depends: arc-theme,
+ at,
+ gdm3 | lightdm,
+ jq,
+ papirus-icon-theme,
+ rename,
+ systemd,
+ wasta-app-tweaks,
+ wasta-backgrounds,
+ wasta-core,
+ wasta-resources,
+ wmctrl,
+ xmlstarlet,
+ ${misc:Depends}
+Recommends: arc-solid-theme,
+ papirus-folders,
+ wasta-papirus,
+ wasta-vertex-ubuntu
 Description: Wasta-Linux MultiDesktop
  Ensures cross-desktop compatibility between different DEs (desktop
  environments).

@@ -21,7 +21,7 @@ exit 0
 
 CURR_UID=$1
 CURR_USER=$(id -un $CURR_UID)
-if [[ "$CURR_USER" == "root" ]] || [[ "$CURR_USER" == "lightdm" ]] || [[ "$CURR_USER" == "gdm" ]]; then
+if [[ "$CURR_USER" == "root" || "$CURR_USER" == "lightdm" || "$CURR_USER" == "gdm" ]]; then
     # do NOT process: curr user is root, lightdm, or gdm
     exit 0
 fi

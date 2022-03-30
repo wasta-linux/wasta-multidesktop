@@ -165,17 +165,24 @@ log_msg "current session id: $CURR_SESSION_ID"
 
 # check session data
 if [[ "$CURR_SESSION_ID" ]]; then
-    CURR_SESSION=$(loginctl show-session $CURR_SESSION_ID | grep Desktop= | sed s/Desktop=//)
-    if [[ "$CURR_SESSION" ]]; then
-        # graphical login - get DM and save current session
-        CURR_DM=$(loginctl show-session $CURR_SESSION_ID | grep Service= | sed s/Service=//)
-        log_msg "Setting CURR_SESSION:$CURR_SESSION in CURR_SESSION_FILE:$CURR_SESSION_FILE"
-        echo "$CURR_SESSION" > $CURR_SESSION_FILE
+    CURR_DM=$(loginctl show-session $CURR_SESSION_ID --property=Service --value)
+    CURR_DM=${CURR_DM%-*} # transform 'gdm-password' to 'gdm'
+    if [[ "$CURR_DM" == 'lightdm' ]]; then
+        CURR_SESSION=$(loginctl show-session $CURR_SESSION_ID --property=Desktop --value)
+    elif [[ "$CURR_DM" == 'gdm' ]]; then
+        # Assume GNOME-based session; e.g. empty if cinnamon running on top of gdm.
+        CURR_SESSION=$(pgrep -anf /usr/libexec/gnome-session-binary | grep -o '\-\-session=\w*' | awk -F= '{print $2}')
     else
-        # Not a graphical session since no Desktop entry in loginctl"
-        log_msg "EXITING: not a GUI session for user $CURR_USER"
+        # The Service property is a non-graphical service or an unsupported DM.
+        log_msg "EXITING: display manager $CURR_DM is not supported for user $CURR_USER"
         exit 0
     fi
+    if [[ -z "$CURR_SESSION" ]]; then
+        # Possibly a non-GNOME DE on top of gdm.
+        log_msg "EXITING: not a supported GUI session for user $CURR_USER on $CURR_DM"
+    fi
+    log_msg "Setting CURR_SESSION:$CURR_SESSION in CURR_SESSION_FILE:$CURR_SESSION_FILE"
+    echo "$CURR_SESSION" > $CURR_SESSION_FILE
 else
     # Shouldn't get here: no session id, so not graphical and don't continue
     log_msg "EXITING... no CURR_SESSION_ID"

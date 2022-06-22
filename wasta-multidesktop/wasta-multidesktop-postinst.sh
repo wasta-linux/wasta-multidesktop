@@ -60,7 +60,7 @@ if [ -z "$WASTA_PLY_THEME" ]; then
 
     # update
     update-initramfs -u
-    
+
     # update grub (to get rid of purple grub boot screen)
     update-grub
 else
@@ -92,6 +92,22 @@ else
     echo "*** Plymouth TEXT Theme already set to wasta-text. No update needed."
     echo
 fi
+
+# ------------------------------------------------------------------------------
+# Hide redundant desktop sessions at login
+# ------------------------------------------------------------------------------
+redundant_sessions=(
+	/usr/share/xsessions/cinnamon2d.desktop
+	/usr/share/xsessions/ubuntu.desktop
+	/usr/share/xsessions/wasta-gnome-xorg.desktop
+	/usr/share/wayland-sessions/ubuntu-wayland.desktop
+	/usr/share/wayland-sessions/wasta-gnome.desktop
+)
+for session in "${redundant_sessions[@]}"; do
+	if [[ -e $session ]]; then
+		mv ${session}{,.disabled}
+	fi
+done
 
 # ------------------------------------------------------------------------------
 # Fix scrollbars to go "one page at a time" with click

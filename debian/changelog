@@ -1,3 +1,9 @@
+wasta-multidesktop (22.04.0.12) jammy; urgency=medium
+
+  * remove /etc/skel items, update logos for 22.04
+
+ -- Rik Shaw <rikshaw76@gmail.com>  Wed, 15 Jun 2022 15:53:52 -0500
+
 wasta-multidesktop (22.04.0.11) jammy; urgency=medium
 
   * Fix gdm3 package name.

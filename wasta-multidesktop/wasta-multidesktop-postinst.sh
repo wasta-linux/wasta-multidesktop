@@ -7,14 +7,6 @@
 #   installation of wasta-multidesktop-setup. It can be manually re-run, but is
 #   only intended to be run at package installation.
 #
-# 2015-06-18 rik: initial script
-# 2016-11-14 rik: enabling wasta-multidesktop systemd service
-# 2017-03-18 rik: disabling wasta-logout systemd service: we now use
-#   wasta-login lightdm script to record user session and retrieve it to
-#   compare session to previous session and sync if any change.
-# 2017-12-20 rik: adding wasta-linux theming items (previously was at the
-#   wasta-core level).
-#
 # ==============================================================================
 
 # ------------------------------------------------------------------------------

@@ -17,8 +17,6 @@
 #           error if item not found (in case some items uninstalled).  the 'true'
 #           will always return 0 from these commands.
 #
-#   2022-01-16 rik: initial jammy script
-#
 # ==============================================================================
 
 CURR_UID=$1
@@ -336,7 +334,7 @@ cinnamon|cinnamon2d)
     # "Failed to disable unit xfce4-notifyd.service: Process org.freedesktop.systemd1 exited with status 1"
 ;;
 
-ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback-compiz|wasta-gnome)
+ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback-compiz|wasta-gnome|wasta-gnome-xorg|wasta-gnome-wayland)
     # ==========================================================================
     # ACTIVE SESSION: UBUNTU / GNOME
     # ==========================================================================

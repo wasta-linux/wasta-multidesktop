@@ -6,8 +6,6 @@
 #   This script is intended to run at logout to sync settings to other supported
 #   Desktop Environments (such as syncing Background Files)
 #
-#   2022-02-01 rik: initial script
-#
 # ==============================================================================
 
 CURR_UID=$1
@@ -157,7 +155,7 @@ cinnamon|cinnamon2d)
     fi
 ;;
 
-ubuntu|ubuntu-xorg|gnome|gnome-flashback-metacity|gnome-flashback-compiz|wasta-gnome)
+ubuntu|ubuntu-xorg|gnome|gnome-flashback-metacity|gnome-flashback-compiz|wasta-gnome|wasta-gnome-xorg|wasta-gnome-wayland)
     #GET GNOME background
     #gnome: "file://" precedes filename
     #2018-12-18 rik: urldecode necessary for gnome IF picture-uri set in gnome AND

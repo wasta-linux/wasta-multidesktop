@@ -1,3 +1,9 @@
+wasta-multidesktop (22.04.0.13) jammy; urgency=medium
+
+  * account for wasta-gnome-wayland and wasta-gnome-xorg sessions
+
+ -- Rik Shaw <rikshaw76@gmail.com>  Wed, 22 Jun 2022 12:19:03 -0500
+
 wasta-multidesktop (22.04.0.12) jammy; urgency=medium
 
   * remove /etc/skel items, update logos for 22.04

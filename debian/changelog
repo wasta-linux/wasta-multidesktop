@@ -1,3 +1,9 @@
+wasta-multidesktop (22.04.0.14) jammy; urgency=medium
+
+  * remove slick-greeter badges: each desktop now provides their own
+
+ -- Rik Shaw <rikshaw76@gmail.com>  Thu, 23 Jun 2022 12:12:35 -0500
+
 wasta-multidesktop (22.04.0.13) jammy; urgency=medium
 
   * account for wasta-gnome-wayland and wasta-gnome-xorg sessions

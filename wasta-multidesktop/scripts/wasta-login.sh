@@ -72,6 +72,14 @@ THUNAR_APPS=(
     thunar-settings.desktop
 )
 
+# nullglob needed for detecting *racker* (Tracker services) below or else one
+#   positive is returned even with no matches!
+# from: https://stackoverflow.com/a/26255830
+# nullglob is a Bash shell option which modifies [[glob]] expansion such
+# that patterns that match no files expand to zero arguments, rather
+# than to themselves.
+shopt -s nullglob
+
 # ------------------------------------------------------------------------------
 # Define Functions
 # ------------------------------------------------------------------------------

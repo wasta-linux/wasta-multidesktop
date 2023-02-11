@@ -2,6 +2,9 @@ wasta-multidesktop (22.04.1.0) UNRELEASED; urgency=medium
 
   * wasta-login.sh: correcting tracker re-enabling for ubuntu /
     gnome sessions
+  * wasta-login.sh: for gnome sessions don't reset app-folders
+    since newer gnome allows drag / drop dynamic folder creation
+    let users do as they see fit.
 
  -- Rik Shaw <rikshaw76@gmail.com>  Sat, 11 Feb 2023 11:51:04 -0600
 

@@ -365,15 +365,17 @@ ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback
     # Ubuntu/GNOME Settings
     # --------------------------------------------------------------------------
 
+    # 22.04: Gnome allows "drag drop on the fly" folder creation now, so don't
+    #   force on users, they can manage as they see fit.
     # Reset ...app-folders folder-children if it's currently set as ['Utilities', 'YaST']
-    key_path='org.gnome.desktop.app-folders'
-    key='folder-children'
-    curr_children=$(sudo --user=$CURR_USER gsettings get "$key_path" "$key")
-    if [[ $curr_children = "['Utilities', 'YaST']" ]] || \
-        [[ $curr_children = "['Utilities', 'Sundry', 'YaST']" ]]; then
-        log_msg "Resetting gsettings $key_path $key"
-        sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings reset "$key_path" "$key" 2>&1 >/dev/null | tee -a "$LOG"
-    fi
+    #key_path='org.gnome.desktop.app-folders'
+    #key='folder-children'
+    #curr_children=$(sudo --user=$CURR_USER gsettings get "$key_path" "$key")
+    #if [[ $curr_children = "['Utilities', 'YaST']" ]] || \
+    #    [[ $curr_children = "['Utilities', 'Sundry', 'YaST']" ]]; then
+    #    log_msg "Resetting gsettings $key_path $key"
+    #    sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus gsettings reset "$key_path" "$key" 2>&1 >/dev/null | tee -a $LOGFILE
+    #fi
 
     # Make adjustments if using lightdm.
     if [[ $CURR_DM == 'lightdm' ]]; then

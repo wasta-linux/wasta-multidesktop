@@ -409,12 +409,13 @@ ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback
     if [ -x /usr/bin/tracker ] | [ -x /usr/bin/tracker3 ]; then
         # enable tracker services
         log_msg "Enabling and starting tracker services"
-        for SERVICE in usr/share/dbus-1/services/*racker*.service.disabled; do
+        for SERVICE in /usr/share/dbus-1/services/*racker*.service.disabled; do
             log_msg "Enabling tracker service: $SERVICE"
             #sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user unmask $SERVICE 2>&1 | tee -a $LOGFILE
             #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user enable $SERVICE
             #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user start $SERVICE
-            mv $SERVICE{.disabled,}
+            #mv $SERVICE{.disabled,}
+            rename 's/.disabled$//;' $SERVICE
         done
     fi
 

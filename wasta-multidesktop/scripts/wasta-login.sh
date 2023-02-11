@@ -326,7 +326,7 @@ cinnamon|cinnamon2d)
             mv $SERVICE{,.disabled}
         done
         # kill any currently running tracker services
-        killall -r tracker-.* || true;
+        killall -r "tracker-.*" || true;
     fi
 
     # --------------------------------------------------------------------------
@@ -527,7 +527,7 @@ xfce|xubuntu)
             mv $SERVICE{,.disabled}
         done
         # kill any currently running tracker services
-        killall -r tracker-.* || true;
+        killall -r "tracker-.*" || true;
     fi
 
     # --------------------------------------------------------------------------

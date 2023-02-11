@@ -3,11 +3,12 @@ Description=Wasta Multidesktop for uid %i
 # Runs on login / logout as root
 Requires=user@%i.service graphical.target
 After=graphical.target
+After=user@%i.service # added this to make it wait until user@%i.service is fully loaded
 
 [Service]
 Type=simple
 RemainAfterExit=yes
-#ExecStartPre=/bin/sleep 15
+ExecStartPre=/bin/sleep 10 # unneeded, but adding this and commenting out the delay in the login script also still works
 ExecStart=/usr/share/wasta-multidesktop/scripts/wasta-login.sh %i
 ExecStop=/usr/share/wasta-multidesktop/scripts/wasta-logout.sh %i
 #TimeoutStartSec=10

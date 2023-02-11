@@ -5,6 +5,12 @@ wasta-multidesktop (22.04.1.0) UNRELEASED; urgency=medium
   * wasta-login.sh: for gnome sessions don't reset app-folders
     since newer gnome allows drag / drop dynamic folder creation
     let users do as they see fit.
+  * wasta-multidesktop@.service: adding "After=user@%i.service
+    to try and make it delay until user session is fully loaded
+    before running. However, it seems that still occasional cases
+    where user session not detected so adding 10s delay to this
+    service and keeping 10s delay in wasta-login.sh to give best
+    chance to ensure user session is detected.
 
  -- Rik Shaw <rikshaw76@gmail.com>  Sat, 11 Feb 2023 11:51:04 -0600
 

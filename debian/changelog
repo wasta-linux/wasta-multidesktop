@@ -1,10 +1,12 @@
-wasta-multidesktop (22.04.1.0) UNRELEASED; urgency=medium
+wasta-multidesktop (22.04.1.0) jammy; urgency=medium
 
   * wasta-login.sh: correcting tracker re-enabling for ubuntu /
     gnome sessions
   * wasta-login.sh: for gnome sessions don't reset app-folders
     since newer gnome allows drag / drop dynamic folder creation
     let users do as they see fit.
+  * wasta-login.sh: setting nullglob for better matching of
+    "*racker*" services ("Tracker") without a false match
   * wasta-multidesktop@.service: adding "After=user@%i.service
     to try and make it delay until user session is fully loaded
     before running. However, it seems that still occasional cases

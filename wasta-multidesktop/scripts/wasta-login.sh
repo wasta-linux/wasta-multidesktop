@@ -236,10 +236,14 @@ if [ -x /usr/bin/nemo-desktop ]; then
     gsettings_set org.nemo.desktop ignored-desktop-handlers "['conky', 'xfdesktop']"
 fi
 
-# copy in zim prefs if don't already exist (these make trayicon work OOTB)
-if ! [ -e /home/$CURR_USER/.config/zim/preferences.conf ]; then
-    su "$CURR_USER" -c "cp -r $DIR/resources/skel/.config/zim \
-        /home/$CURR_USER/.config/zim"
+# 22.04.1 ISO was missing /etc/skel/.bashrc for some reason
+# want to always ensure this is in place for users
+if ! [ -e "/etc/skel/.bashrc" ]; then
+    cp "$DIR/resources/.bashrc" "/etc/skel/.bashrc"
+fi
+
+if ! [ -e "/home/$CURR_USER/.bashrc" ]; then
+    su "$CURR_USER" -c "cp /etc/skel/.bashrc /home/$CURR_USER/.bashrc"
 fi
 
 # 20.04 not needed?????

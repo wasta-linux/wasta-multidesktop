@@ -1,3 +1,9 @@
+wasta-multidesktop (22.04.3.0) jammy; urgency=medium
+
+  * wasta-login: replace ~/.bashrc if missing
+
+ -- Rik Shaw <rikshaw76@gmail.com>  Thu, 17 Aug 2023 15:04:17 -0500
+
 wasta-multidesktop (22.04.1.0) jammy; urgency=medium
 
   * wasta-login.sh: correcting tracker re-enabling for ubuntu /

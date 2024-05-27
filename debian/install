@@ -1,4 +1,3 @@
-debian/wasta-multidesktop@.service         lib/systemd/system
 install-files/goldendict-dictionaries/*    usr/share/wasta-resources/.goldendict-dictionaries
 install-files/icons                        usr/share
 install-files/plymouth-themes/*            usr/share/plymouth/themes

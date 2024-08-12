@@ -119,7 +119,7 @@ AS_BG=$(sed -n "s@BackgroundFile=@@p" $AS_FILE)
 # Process based on current session (that is closing)
 case "$CURR_SESSION" in
 
-cinnamon|cinnamon2d)
+cinnamon|cinnamon2d|cinnamon-wayland)
     #GET Cinnamon background
     #cinnamon: "file://" precedes filename
     #2018-12-18 rik: will do urldecode but not currently necessary for cinnamon
@@ -130,6 +130,7 @@ cinnamon|cinnamon2d)
     # sync Cinnamon background to Gnome-Shell background
     if [ -x /usr/bin/gnome-shell ]; then
         gsettings_set org.gnome.desktop.background picture-uri "$BG"
+         gsettings_set org.gnome.desktop.background picture-uri-dark "$BG"
         gsettings_set org.gnome.desktop.screensaver picture-uri "$BG"
     fi
 
@@ -160,7 +161,15 @@ ubuntu|ubuntu-xorg|gnome|gnome-flashback-metacity|gnome-flashback-compiz|wasta-g
     #gnome: "file://" precedes filename
     #2018-12-18 rik: urldecode necessary for gnome IF picture-uri set in gnome AND
     #   unicode characters present
-    BG_ENCODE=$(gsettings_get org.gnome.desktop.background picture-uri)
+    COLOR_SCHEME=$(gsettings_get org.gnome.desktop.interface color-scheme)
+    if [ $COLOR_SCHEME == "default" ]; then
+        echo "using picture-uri to read gnome bg"
+        BG_ENCODE=$(gsettings_get org.gnome.desktop.background picture-uri)
+    else
+        echo "using picture-uri-dark to read gnome bg"
+        BG_ENCODE=$(gsettings_set org.gnome.desktop.background picture-uri-dark)
+    fi
+
     BG=$(urldecode "$BG_ENCODE")
     log_msg "syncing GNOME bg to other locations: $BG"
 
@@ -215,6 +224,7 @@ xfce|xubuntu)
     # sync XFCE background to GNOME background
     if [ -x /usr/bin/gnome-shell ]; then
         gsettings_set org.gnome.desktop.background picture-uri "'file://$XFCE_BG_NO_QUOTE'"
+        gsettings_set org.gnome.desktop.background picture-uri-dark "'file://$XFCE_BG_NO_QUOTE'"
         gsettings_set org.gnome.desktop.screensaver picture-uri "'file://$XFCE_BG_NO_QUOTE'"
     fi
 

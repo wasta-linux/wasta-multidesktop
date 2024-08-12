@@ -9,33 +9,10 @@
 #   After modifying these .override files, reload with:
 #       glib-compile-schemas /usr/share/glib-2.0/schemas/
 #
-#   2017-11-29 rik: initial bionic settings
-#   2018-02-28 rik: adjusting slick-greeter values
-#   2019-01-08 rik: adding Wasta customized Gnome settings (wasta-core gives
-#       default Ubuntu experience)
-#   2019-08-20 rik: setting gnome-terminal theme to 'dark'
-#   2019-12-13 rik: setting 20.04 picture-uri
-#
 # ==============================================================================
 
 # arc-darker '#30343A' ==> background-color = '#30343A'
 # ambiance dark gray color: '#3C3C3C' ==> background-color = '#3C3C3C'
-
-[org.gnome.desktop.background:ubuntu]
-show-desktop-icons = true
-picture-uri = 'file:///usr/share/backgrounds/wasta/wasta-trianglify.png'
-
-# NOTE: for 22.04 gnome settings don't "stick" because need to append :ubuntu
-#   like this: [org.gnome.desktop.interface:ubuntu] BUT not doing so that
-#   users can have default ubuntu settings (Yaru, etc)
-[org.gnome.desktop.interface]
-clock-format = '12h'
-clock-show-date = true
-cursor-theme = 'DMZ-White'
-font-name = 'Ubuntu 11'
-gtk-theme = 'Arc-Darker'
-icon-theme = 'ePapirus'
-monospace-font-name = 'Ubuntu Mono 12'
 
 [org.gnome.desktop.lockdown]
 disable-user-switching = true
@@ -47,29 +24,48 @@ automount-open = false
 [org.gnome.desktop.privacy]
 remember-recent-files = true
 
+[org.gnome.shell]
+favorite-apps = ['firefox-esr.desktop', 'thunderbird.desktop', 'org.gnome.Nautilus.desktop', 'libreoffice-writer.desktop', 'wasta-backup.desktop', 'wasta-resources.desktop']
+
+[org.gnome.desktop.background:ubuntu]
+show-desktop-icons = true
+picture-uri = 'file:///usr/share/backgrounds/wasta/daniel-von-appen-unsplash-wasta-text-dark.jpg'
+picture-uri-dark = 'file:///usr/share/backgrounds/wasta/daniel-von-appen-unsplash-wasta-text-dark.jpg'
+
 [org.gnome.desktop.screensaver]
 lock-enabled = false
-picture-uri = 'file:///usr/share/backgrounds/wasta/wasta-trianglify.png'
-ubuntu-lock-on-suspend = false
-
-[org.gnome.desktop.wm.preferences]
-theme = 'Arc-Darker'
-titlebar-font = 'Ubuntu Bold 11'
-
-[org.gnome.shell]
-favorite-apps = ['firefox.desktop', 'org.gnome.Nautilus.desktop', 'libreoffice-writer.desktop', 'wasta-backup.desktop', 'wasta-resources.desktop']
+picture-uri = 'file:///usr/share/backgrounds/wasta/daniel-von-appen-unsplash-wasta-text-dark.jpg'
+buntu-lock-on-suspend = false
 
 [org.gnome.Terminal.Legacy.Settings]
 theme-variant = 'dark'
 
-[x.dm.slick-greeter]
-background = ''
-background-color = '#30343A'
-draw-grid = true
-draw-user-backgrounds = true
-font-name = 'Ubuntu 11'
-icon-theme-name = 'ePapirus'
-logo = '/usr/share/wasta-multidesktop/resources/wasta-linux.png'
-other-monitors-logo = '/usr/share/icons/hicolor/scalable/apps/wasta-linux.svg'
-play-ready-sound = ''
-theme-name = 'Arc-Darker'
+#[org.gnome.desktop.wm.preferences]
+#theme = 'Arc-Darker'
+#titlebar-font = 'Ubuntu Bold 11'
+
+# NOTE: for 22.04 gnome settings don't "stick" because need to append :ubuntu
+#   like this: [org.gnome.desktop.interface:ubuntu] BUT not doing so that
+#   users can have default ubuntu settings (Yaru, etc)
+#[org.gnome.desktop.interface]
+#clock-format = '12h'
+#clock-show-date = true
+#cursor-theme = 'DMZ-White'
+#font-name = 'Ubuntu 11'
+#gtk-theme = 'Arc-Darker'
+#icon-theme = 'ePapirus'
+#monospace-font-name = 'Ubuntu Mono 12'
+
+# 24.04: probably not used here: lightdm only getting installed by
+#   wasta-cinnamon-upgrade and wasta-cinnamon will set slick-greeter appearance
+#[x.dm.slick-greeter]
+#background = ''
+#background-color = '#30343A'
+#draw-grid = true
+#draw-user-backgrounds = true
+#font-name = 'Ubuntu 11'
+#icon-theme-name = 'ePapirus'
+#logo = '/usr/share/wasta-multidesktop/resources/wasta-linux.png'
+#other-monitors-logo = '/usr/share/icons/hicolor/scalable/apps/wasta-linux.svg'
+#play-ready-sound = ''
+#theme-name = 'Arc-Dark'

@@ -45,9 +45,10 @@ CURR_SESSION_FILE="${LOGDIR}/$CURR_USER-curr-session"
 # The following apps lists are used to toggle apps' visibility off or on
 #   according to the CURR_SESSION variable.
 CINNAMON_APPS=(
-    nemo.desktop
+    blueman-manager.desktop
     cinnamon-online-accounts-panel.desktop
     cinnamon-settings-startup.desktop
+    nemo.desktop
     nemo-compare-preferences.desktop
 )
 
@@ -265,7 +266,7 @@ fi
 # Processing based on current session
 # ------------------------------------------------------------------------------
 case "$CURR_SESSION" in
-cinnamon|cinnamon2d)
+cinnamon|cinnamon2d|cinnamon-wayland)
     # ==========================================================================
     # ACTIVE SESSION: CINNAMON
     # ==========================================================================
@@ -299,13 +300,6 @@ cinnamon|cinnamon2d)
     # HIDE Ubuntu/GNOME items
     log_msg "Hiding GNOME apps from the desktop user"
     toggle_apps_visibility GNOME_APPS 'hide'
-
-    # Blueman-applet may be active: kill (will not error if not found)
-
-# rumor is that Mint 21 will h ave blueman as default not blueberry
-    #if [ "$(pgrep blueman-applet)" ]; then
-    #    killall blueman-applet | tee -a $LOGFILE
-    #fi
 
     # ENABLE notify-osd
     if [ -e /usr/share/dbus-1/services/org.freedesktop.Notifications.service.disabled ]; then
@@ -492,11 +486,6 @@ xfce|xubuntu)
     log_msg "Hiding GNOME apps from the desktop user"
     toggle_apps_visibility GNOME_APPS 'hide'
 
-    # TODO-2022: check status of this
-    # Blueman-applet may be active: kill (will not error if not found)
-    #if [ "$(pgrep blueman-applet)" ]; then
-    #    killall blueman-applet | tee -a $LOGFILE
-    #fi
 
     # TODO-2022: check status of this - maybe do need to toggle on and off....
     # Prevent Gnome from drawing the desktop (for Xubuntu, Nautilus is not

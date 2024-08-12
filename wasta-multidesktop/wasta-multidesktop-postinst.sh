@@ -94,22 +94,6 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# Hide redundant desktop sessions at login
-# ------------------------------------------------------------------------------
-redundant_sessions=(
-	/usr/share/xsessions/cinnamon2d.desktop
-	/usr/share/xsessions/ubuntu.desktop
-	/usr/share/xsessions/wasta-gnome-xorg.desktop
-	/usr/share/wayland-sessions/ubuntu-wayland.desktop
-	/usr/share/wayland-sessions/wasta-gnome.desktop
-)
-for session in "${redundant_sessions[@]}"; do
-	if [[ -e $session ]]; then
-		mv ${session}{,.disabled}
-	fi
-done
-
-# ------------------------------------------------------------------------------
 # Fix scrollbars to go "one page at a time" with click
 # ------------------------------------------------------------------------------
 # global gtk-3.0 setting location:
@@ -134,7 +118,7 @@ echo
 glib-compile-schemas /usr/share/glib-2.0/schemas/ # > /dev/null 2>&1 || true;
 
 echo
-echo "enable wasta-multidesktop@.service"
+echo "*** enable wasta-multidesktop@.service"
 echo
 systemctl enable wasta-multidesktop@.service
 

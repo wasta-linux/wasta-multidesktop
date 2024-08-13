@@ -45,7 +45,6 @@ CURR_SESSION_FILE="${LOGDIR}/$CURR_USER-curr-session"
 # The following apps lists are used to toggle apps' visibility off or on
 #   according to the CURR_SESSION variable.
 CINNAMON_APPS=(
-    blueman-manager.desktop
     cinnamon-online-accounts-panel.desktop
     cinnamon-settings-startup.desktop
     nemo.desktop
@@ -54,7 +53,6 @@ CINNAMON_APPS=(
 
 GNOME_APPS=(
     alacarte.desktop
-    blueman-manager.desktop
     gnome-online-accounts-panel.desktop
     gnome-session-properties.desktop
     gnome-tweak-tool.desktop
@@ -284,7 +282,6 @@ cinnamon|cinnamon2d|cinnamon-wayland)
         sed -i \
             -e 's@\(inode/directory\)=.*@\1=nemo.desktop@' \
             -e 's@\(application/x-gnome-saved-search\)=.*@\1=nemo.desktop@' \
-            /etc/gnome/defaults.list \
             /usr/share/applications/defaults.list || true;
     fi
 
@@ -403,7 +400,6 @@ ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback
         sed -i \
             -e 's@\(inode/directory\)=.*@\1=org.gnome.Nautilus.desktop@' \
             -e 's@\(application/x-gnome-saved-search\)=.*@\1=org.gnome.Nautilus.desktop@' \
-            /etc/gnome/defaults.list \
             /usr/share/applications/defaults.list || true;
     fi
 
@@ -453,7 +449,6 @@ xfce|xubuntu)
         sed -i \
             -e 's@\(inode/directory\)=.*@\1=nemo.desktop@' \
             -e 's@\(application/x-gnome-saved-search\)=.*@\1=nemo.desktop@' \
-            /etc/gnome/defaults.list \
             /usr/share/applications/defaults.list || true;
 
         # TODO-2022: check for 22.04

@@ -35,7 +35,7 @@ picture-uri-dark = 'file:///usr/share/backgrounds/wasta/daniel-von-appen-unsplas
 [org.gnome.desktop.screensaver]
 lock-enabled = false
 picture-uri = 'file:///usr/share/backgrounds/wasta/daniel-von-appen-unsplash-wasta-text-dark.jpg'
-buntu-lock-on-suspend = false
+ubuntu-lock-on-suspend = false
 
 [org.gnome.Terminal.Legacy.Settings]
 theme-variant = 'dark'

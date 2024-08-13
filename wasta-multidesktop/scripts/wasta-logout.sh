@@ -162,12 +162,12 @@ ubuntu|ubuntu-xorg|gnome|gnome-flashback-metacity|gnome-flashback-compiz|wasta-g
     #2018-12-18 rik: urldecode necessary for gnome IF picture-uri set in gnome AND
     #   unicode characters present
     COLOR_SCHEME=$(gsettings_get org.gnome.desktop.interface color-scheme)
-    if [ $COLOR_SCHEME == "default" ]; then
+    if [ "$COLOR_SCHEME" == "'default'" ]; then
         echo "using picture-uri to read gnome bg"
         BG_ENCODE=$(gsettings_get org.gnome.desktop.background picture-uri)
     else
         echo "using picture-uri-dark to read gnome bg"
-        BG_ENCODE=$(gsettings_set org.gnome.desktop.background picture-uri-dark)
+        BG_ENCODE=$(gsettings_get org.gnome.desktop.background picture-uri-dark)
     fi
 
     BG=$(urldecode "$BG_ENCODE")

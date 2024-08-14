@@ -1,3 +1,9 @@
+wasta-multidesktop (24.04.0.4) noble; urgency=medium
+
+  * gschema.override: add ":ubuntu" for ubuntu session
+
+ -- Rik Shaw <rikshaw76@gmail.com>  Wed, 14 Aug 2024 10:35:23 -0500
+
 wasta-multidesktop (24.04.0.3) noble; urgency=medium
 
   * wasta-login: add blueman as a cinnamon app (so not hidden)

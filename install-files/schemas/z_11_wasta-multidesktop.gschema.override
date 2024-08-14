@@ -14,17 +14,17 @@
 # arc-darker '#30343A' ==> background-color = '#30343A'
 # ambiance dark gray color: '#3C3C3C' ==> background-color = '#3C3C3C'
 
-[org.gnome.desktop.lockdown]
+[org.gnome.desktop.lockdown:ubuntu]
 disable-user-switching = true
 
-[org.gnome.desktop.media-handling]
+[org.gnome.desktop.media-handling:ubuntu]
 automount = true
 automount-open = false
 
-[org.gnome.desktop.privacy]
+[org.gnome.desktop.privacy:ubuntu]
 remember-recent-files = true
 
-[org.gnome.shell]
+[org.gnome.shell:ubuntu]
 favorite-apps = ['firefox-esr.desktop', 'thunderbird.desktop', 'org.gnome.Nautilus.desktop', 'libreoffice-writer.desktop', 'wasta-backup.desktop', 'wasta-resources.desktop']
 
 [org.gnome.desktop.background:ubuntu]
@@ -32,7 +32,7 @@ show-desktop-icons = true
 picture-uri = 'file:///usr/share/backgrounds/wasta/daniel-von-appen-unsplash-wasta-text-dark.jpg'
 picture-uri-dark = 'file:///usr/share/backgrounds/wasta/daniel-von-appen-unsplash-wasta-text-dark.jpg'
 
-[org.gnome.desktop.screensaver]
+[org.gnome.desktop.screensaver:ubuntu]
 lock-enabled = false
 picture-uri = 'file:///usr/share/backgrounds/wasta/daniel-von-appen-unsplash-wasta-text-dark.jpg'
 ubuntu-lock-on-suspend = false

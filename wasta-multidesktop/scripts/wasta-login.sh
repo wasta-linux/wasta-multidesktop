@@ -319,6 +319,10 @@ cinnamon|cinnamon2d|cinnamon-wayland)
             #sudo --user=$CURR_USER --set-home dbus-launch systemctl --user stop $SERVICE
             #sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user mask $SERVICE 2>&1 | tee -a $LOGFILE
             mv $SERVICE{,.disabled}
+
+        desktop-file-edit --set-key=X-GNOME-Autostart-enabled --set-value=false \
+            /etc/xdg/autostart/tracker-miner-fs-3.desktop
+
         done
         # kill any currently running tracker services
         killall -r "tracker-.*" || true;
@@ -421,6 +425,9 @@ ubuntu|ubuntu-xorg|ubuntu-wayland|gnome|gnome-flashback-metacity|gnome-flashback
             #mv $SERVICE{.disabled,}
             rename 's/.disabled$//;' $SERVICE
         done
+
+        desktop-file-edit --set-key=X-GNOME-Autostart-enabled --set-value=true \
+            /etc/xdg/autostart/tracker-miner-fs-3.desktop
     fi
 
     # --------------------------------------------------------------------------
@@ -514,6 +521,10 @@ xfce|xubuntu)
             #sudo --user=$CURR_USER DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$CURR_UID/bus systemctl --user mask $SERVICE 2>&1 | tee -a $LOGFILE
             mv $SERVICE{,.disabled}
         done
+
+        desktop-file-edit --set-key=X-GNOME-Autostart-enabled --set-value=false \
+            /etc/xdg/autostart/tracker-miner-fs-3.desktop
+
         # kill any currently running tracker services
         killall -r "tracker-.*" || true;
     fi

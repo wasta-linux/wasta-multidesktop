@@ -1,3 +1,9 @@
+wasta-multidesktop (24.04.1.1) noble; urgency=medium
+
+  * syntax correct on cinnamon disable tracker xdg autostart
+
+ -- Rik Shaw <rikshaw76@gmail.com>  Mon, 16 Sep 2024 16:52:43 -0500
+
 wasta-multidesktop (24.04.1.0) noble; urgency=medium
 
   * wasta-login: enable/disable /etc/xdg/autostart/tracker*.desktop
